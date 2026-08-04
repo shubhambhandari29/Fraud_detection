@@ -1,0 +1,9 @@
+.env
+.DS_Store
+AGENTS.md
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.venv/
+tests/
