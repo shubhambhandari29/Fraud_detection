@@ -16,7 +16,7 @@ from db import db_connection
 
 
 app = FastAPI(title="Fraud API", version="0.1.0")
-app.include_router(auth_router)
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 
 
 @dataclass(frozen=True)
