@@ -3,10 +3,10 @@
 import hmac
 from datetime import UTC, datetime, timedelta
 
-from fastapi import HTTPException, Response, status
+from fastapi import HTTPException, Request, Response, status
 
 from core.config import settings
-from core.jwt_handler import create_access_token, create_refresh_token
+from core.jwt_handler import create_access_token, create_refresh_token, decode_access_token
 from core.models.auth import LoginRequest, LoginResponse, UserResponse
 
 
@@ -42,6 +42,17 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
     )
 
 
+def _build_user(email: str, role: str) -> UserResponse:
+    return UserResponse(
+        id=email,
+        first_name=email.split("@", maxsplit=1)[0],
+        last_name="",
+        email=email,
+        role=role,
+        branch=None,
+    )
+
+
 async def login_user(payload: LoginRequest, response: Response) -> LoginResponse:
     """Authenticate against the temporary password and issue JWTs."""
     if not hmac.compare_digest(payload.password, TEMPORARY_PASSWORD):
@@ -52,14 +63,7 @@ async def login_user(payload: LoginRequest, response: Response) -> LoginResponse
 
     email = str(payload.email).strip().lower()
     role = "admin" if email == ADMIN_EMAIL else "user"
-    user = UserResponse(
-        id=email,
-        first_name=email.split("@", maxsplit=1)[0],
-        last_name="",
-        email=email,
-        role=role,
-        branch=None,
-    )
+    user = _build_user(email, role)
 
     access_token = create_access_token(user.id, user.role)
     refresh_token = create_refresh_token(user.id, user.role)
@@ -69,4 +73,33 @@ async def login_user(payload: LoginRequest, response: Response) -> LoginResponse
         message="Sign in successful",
         user=user,
         token=access_token,
+    )
+
+
+async def get_current_user_from_token(request: Request) -> LoginResponse:
+    """Validate SAC's session cookie and return the authenticated user."""
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"error": "Not authenticated"},
+        )
+
+    try:
+        payload = decode_access_token(token)
+        email = str(payload.get("sub") or "").strip().lower()
+        role = str(payload.get("role") or "").strip().lower()
+        if not email or role not in {"user", "admin"}:
+            raise ValueError("JWT is missing a supported user or role")
+        user = _build_user(email, role)
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"error": "Invalid token"},
+        ) from error
+
+    return LoginResponse(
+        message="User authenticated",
+        user=user,
+        token=token,
     )

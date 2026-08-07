@@ -23,3 +23,8 @@ class LoginResponse(BaseModel):
     message: str
     user: UserResponse
     token: str
+
+
+class UserInfoResponse(BaseModel):
+    user: str
+    groups: str

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from pyodbc import Cursor
 
 from api.auth import router as auth_router
+from api.user_info import router as user_info_router
 from core.config import settings
 from db import db_connection
 
@@ -26,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(user_info_router, prefix="/api", tags=["Authentication"])
 
 
 @dataclass(frozen=True)
