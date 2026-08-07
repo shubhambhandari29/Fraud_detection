@@ -10,6 +10,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
 
+def _parse_origins(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return list(
+        dict.fromkeys(
+            origin.strip().rstrip("/")
+            for origin in value.split(",")
+            if origin.strip()
+        )
+    )
+
+
 class Settings:
     """Runtime settings loaded from environment variables."""
 
@@ -25,6 +37,9 @@ class Settings:
     REFRESH_TOKEN_VALIDITY: int = int(os.getenv("REFRESH_TOKEN_VALIDITY", "10080"))
     SECURE_COOKIE: bool = os.getenv("SECURE_COOKIE", "false").strip().lower() == "true"
     SAME_SITE: str = os.getenv("SAME_SITE", "lax")
+
+    # Comma-separated frontend URLs.
+    ALLOWED_ORIGINS: list[str] = _parse_origins(os.getenv("FRONTEND_URL"))
 
 
 settings = Settings()
