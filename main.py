@@ -11,10 +11,12 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 from pyodbc import Cursor
 
+from api.auth import router as auth_router
 from db import db_connection
 
 
 app = FastAPI(title="Fraud API", version="0.1.0")
+app.include_router(auth_router)
 
 
 @dataclass(frozen=True)
