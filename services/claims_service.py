@@ -17,14 +17,20 @@ async def get_claims(
     limit: int,
     offset: int,
     status: str | None = None,
+    addressed: bool | None = None,
 ) -> list[dict[str, Any]]:
     try:
-        filters = {"Status": "" if status == "Blank" else status} if status else None
+        filters: dict[str, Any] = {}
+        if status is not None:
+            filters["Status"] = "" if status == "Blank" else status
+        if addressed is not None:
+            filters["Addressed"] = str(addressed)
+
         return await fetch_records_async(
             TABLE_NAME,
             limit=limit,
             offset=offset,
-            filters=filters,
+            filters=filters or None,
         )
     except Exception as error:
         logger.exception("Failed to fetch claims")

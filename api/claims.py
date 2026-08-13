@@ -20,8 +20,9 @@ async def get_claims(
     status: Literal["Pending", "Monitor", "Dismissed", "Blank", "Assigned"] | None = Query(
         default=None
     ),
+    addressed: bool | None = Query(default=None, alias="Addressed"),
 ) -> list[dict[str, Any]]:
-    return await get_claims_service(limit, offset, status)
+    return await get_claims_service(limit, offset, status, addressed)
 
 
 @router.post("/upsert", response_model=WriteResult)
