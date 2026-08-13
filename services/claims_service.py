@@ -13,9 +13,19 @@ TABLE_NAME = "dbo.tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector"
 PRIMARY_KEY = "ID"
 
 
-async def get_claims(limit: int, offset: int) -> list[dict[str, Any]]:
+async def get_claims(
+    limit: int,
+    offset: int,
+    status: str | None = None,
+) -> list[dict[str, Any]]:
     try:
-        return await fetch_records_async(TABLE_NAME, limit=limit, offset=offset)
+        filters = {"Status": "" if status == "Blank" else status} if status else None
+        return await fetch_records_async(
+            TABLE_NAME,
+            limit=limit,
+            offset=offset,
+            filters=filters,
+        )
     except Exception as error:
         logger.exception("Failed to fetch claims")
         raise HTTPException(

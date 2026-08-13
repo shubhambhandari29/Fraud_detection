@@ -43,7 +43,13 @@ def _validate_record(record: dict[str, Any], allowed_columns: set[str]) -> None:
         _quote_identifier(column)
 
 
-def fetch_records(table: str, *, limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
+def fetch_records(
+    table: str,
+    *,
+    limit: int = 100,
+    offset: int = 0,
+    filters: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     """Return a page of rows from a known service-owned table."""
     if not 1 <= limit <= 500:
         raise ValueError("limit must be between 1 and 500")
@@ -52,10 +58,20 @@ def fetch_records(table: str, *, limit: int = 100, offset: int = 0) -> list[dict
 
     with db_connection() as connection:
         cursor = connection.cursor()
+        filter_values: list[Any] = []
+        where_sql = ""
+        if filters:
+            clauses = []
+            for column, value in filters.items():
+                clauses.append(f"{_quote_identifier(column)} = ?")
+                filter_values.append(value)
+            where_sql = " WHERE " + " AND ".join(clauses)
+
         cursor.execute(
             f"SELECT * FROM {_quote_table(table)} "
+            f"{where_sql}"
             "ORDER BY (SELECT NULL) OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
-            [offset, limit],
+            [*filter_values, offset, limit],
         )
         columns = [description[0] for description in cursor.description]
         return [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
@@ -159,9 +175,16 @@ async def fetch_records_async(
     *,
     limit: int = 100,
     offset: int = 0,
+    filters: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     return await run_in_threadpool(
-        partial(fetch_records, table=table, limit=limit, offset=offset)
+        partial(
+            fetch_records,
+            table=table,
+            limit=limit,
+            offset=offset,
+            filters=filters,
+        )
     )
 
 

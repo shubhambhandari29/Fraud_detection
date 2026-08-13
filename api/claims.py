@@ -1,6 +1,6 @@
 """Claims API routes."""
 
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query
 
@@ -17,8 +17,11 @@ router = APIRouter(dependencies=[Depends(get_current_user_from_token)])
 async def get_claims(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    status: Literal["Pending", "Monitor", "Dismissed", "Blank", "Assigned"] | None = Query(
+        default=None
+    ),
 ) -> list[dict[str, Any]]:
-    return await get_claims_service(limit, offset)
+    return await get_claims_service(limit, offset, status)
 
 
 @router.post("/upsert", response_model=WriteResult)
