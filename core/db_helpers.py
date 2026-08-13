@@ -65,7 +65,7 @@ def fetch_records(
             for column, value in filters.items():
                 clauses.append(f"{_quote_identifier(column)} = ?")
                 filter_values.append(value)
-            where_sql = " WHERE " + " AND ".join(clauses)
+            where_sql = "WHERE " + " AND ".join(clauses) + " "
 
         cursor.execute(
             f"SELECT * FROM {_quote_table(table)} "

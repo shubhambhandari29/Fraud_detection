@@ -18,7 +18,7 @@ async def get_claims(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     status: Literal["Pending", "Monitor", "Dismissed", "Blank", "Assigned"] | None = Query(
-        default=None
+        default=None, alias="Status"
     ),
     addressed: bool | None = Query(default=None, alias="Addressed"),
 ) -> list[dict[str, Any]]:
