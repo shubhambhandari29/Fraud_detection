@@ -59,18 +59,20 @@ def fetch_records(
     with db_connection() as connection:
         cursor = connection.cursor()
         filter_values: list[Any] = []
-        where_sql = ""
+        query_parts = [f"SELECT * FROM {_quote_table(table)}"]
         if filters:
             clauses = []
             for column, value in filters.items():
                 clauses.append(f"{_quote_identifier(column)} = ?")
                 filter_values.append(value)
-            where_sql = "WHERE " + " AND ".join(clauses) + " "
+            query_parts.append("WHERE " + " AND ".join(clauses))
+
+        query_parts.append(
+            "ORDER BY (SELECT NULL) OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"
+        )
 
         cursor.execute(
-            f"SELECT * FROM {_quote_table(table)} "
-            f"{where_sql}"
-            "ORDER BY (SELECT NULL) OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+            " ".join(query_parts),
             [*filter_values, offset, limit],
         )
         columns = [description[0] for description in cursor.description]
