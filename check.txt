@@ -1,16 +1,3 @@
-USE [CLM_LakeHouse];
-GO
+CREATE USER [bb8645bb-88c9-4a65-bb39-adf60bd93fd8] FROM EXTERNAL PROVIDER;
 
-CREATE USER [SACPlatformAPI_PreProd_MI]
-FROM EXTERNAL PROVIDER
-WITH OBJECT_ID = 'bb8645bb-88c9-4a65-bb39-adf60bd93fd8';
-GO
-
-ALTER ROLE [db_datareader]
-ADD MEMBER [SACPlatformAPI_PreProd_MI];
-GO
-
-
-CREATE USER [<AppServiceIdentityName>] FROM EXTERNAL PROVIDER;
-ALTER ROLE db_datareader ADD MEMBER [<AppServiceIdentityName>];
-ALTER ROLE db_datawriter ADD MEMBER [<AppServiceIdentityName>];
+ALTER ROLE db_datareader ADD MEMBER [bb8645bb-88c9-4a65-bb39-adf60bd93fd8];
