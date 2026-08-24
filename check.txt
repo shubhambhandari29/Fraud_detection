@@ -1,5 +1,60 @@
-pyodbc.ProgrammingError: ('42000', '[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Must declare the scalar variable "@P1ORDER". (137) (SQLExecDirectW); [42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Incorrect syntax near \'OFFSET\'. (102); [42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid usage of the option NEXT in the FETCH statement. (153); [42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)')
-INFO:     127.0.0.1:56922 - "GET /claims/?Status=Monitor HTTP/1.1" 500 Internal Server Error
+http://localhost:8000/claims/upsert
 
-pyodbc.ProgrammingError: ('42000', '[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Must declare the scalar variable "@P1ORDER". (137) (SQLExecDirectW); [42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Incorrect syntax near \'OFFSET\'. (102); [42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid usage of the option NEXT in the FETCH statement. (153); [42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)')
-INFO:     127.0.0.1:52206 - "GET /claims/?Addressed=True HTTP/1.1" 500 Internal Server Error
+
+{"CLM_NBR":"85-00312272","TOTAL_RESERVE":85000,"ANALYST_NAME":"MCMONAGLE, CYNTHIA A.","ANALYST_CHANGE":"No","WATCHLIST":"Not Available Yet","WATCHLIST_SCORE":0,"WATCHLIST_CHANGE":"No","SIU_GUIDELINES":"G7","SIU_G_SCORE":0.14,"SIU_CHANGE":"No","ISO_MATCH":"No","ISO_CHANGE":"No","CARPE_IMPACT":"Blank","CARPE_CHANGE":"No","ML_PREDICTIONS":"1: High","ML_SCORE":0.4399999976158142,"RULES_ENGINE":1,"SIU_REFERRAL":1,"CTS_TABLE":"Closed No Assignment","REFERRAL_MECHANISM":"Model and Rules Engine","Status":"Dismissed","Feedback":"Alerts not valuable - IES, Alerts not valuable - Watchlist","Feedback Notes":"added","Addressed":"False","Date Addressed":null,"Date Generated":"2024-05-10","Selected":0,"ID":"102","New_Updates":"No","Last Updated By":"","IES":"Yes","low_apd_pay":"No","LOW_APD_PAY_CHANGE":"No","MODEL_RUN_DATE":"2026-01-23","IES_FLAG":"No","CARPE_STATUS":"Not in Carpe"}
+
+
+
+
+
+{
+    "detail": [
+        {
+            "type": "missing",
+            "loc": [
+                "body",
+                "records"
+            ],
+            "msg": "Field required",
+            "input": {
+                "CLM_NBR": "85-00312272",
+                "TOTAL_RESERVE": 85000,
+                "ANALYST_NAME": "MCMONAGLE, CYNTHIA A.",
+                "ANALYST_CHANGE": "No",
+                "WATCHLIST": "Not Available Yet",
+                "WATCHLIST_SCORE": 0,
+                "WATCHLIST_CHANGE": "No",
+                "SIU_GUIDELINES": "G7",
+                "SIU_G_SCORE": 0.14,
+                "SIU_CHANGE": "No",
+                "ISO_MATCH": "No",
+                "ISO_CHANGE": "No",
+                "CARPE_IMPACT": "Blank",
+                "CARPE_CHANGE": "No",
+                "ML_PREDICTIONS": "1: High",
+                "ML_SCORE": 0.4399999976158142,
+                "RULES_ENGINE": 1,
+                "SIU_REFERRAL": 1,
+                "CTS_TABLE": "Closed No Assignment",
+                "REFERRAL_MECHANISM": "Model and Rules Engine",
+                "Status": "Dismissed",
+                "Feedback": "Alerts not valuable - IES, Alerts not valuable - Watchlist",
+                "Feedback Notes": "added",
+                "Addressed": "False",
+                "Date Addressed": null,
+                "Date Generated": "2024-05-10",
+                "Selected": 0,
+                "ID": "102",
+                "New_Updates": "No",
+                "Last Updated By": "",
+                "IES": "Yes",
+                "low_apd_pay": "No",
+                "LOW_APD_PAY_CHANGE": "No",
+                "MODEL_RUN_DATE": "2026-01-23",
+                "IES_FLAG": "No",
+                "CARPE_STATUS": "Not in Carpe"
+            }
+        }
+    ]
+}
+
