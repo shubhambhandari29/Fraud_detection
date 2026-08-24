@@ -1,1 +1,16 @@
-pyodbc.ProgrammingError: ('42000', '[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]The incoming tabular data stream (TDS) remote procedure call (RPC) protocol stream is incorrect. Table-valued parameter 22, to a parameterized string has no table type defined. (8058) (SQLExecDirectW)')
+USE [CLM_LakeHouse];
+GO
+
+CREATE USER [SACPlatformAPI_PreProd_MI]
+FROM EXTERNAL PROVIDER
+WITH OBJECT_ID = 'bb8645bb-88c9-4a65-bb39-adf60bd93fd8';
+GO
+
+ALTER ROLE [db_datareader]
+ADD MEMBER [SACPlatformAPI_PreProd_MI];
+GO
+
+
+CREATE USER [<AppServiceIdentityName>] FROM EXTERNAL PROVIDER;
+ALTER ROLE db_datareader ADD MEMBER [<AppServiceIdentityName>];
+ALTER ROLE db_datawriter ADD MEMBER [<AppServiceIdentityName>];
