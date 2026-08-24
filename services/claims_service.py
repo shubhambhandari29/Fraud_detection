@@ -1,6 +1,7 @@
 """Claims table operations."""
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
@@ -11,6 +12,15 @@ from core.db_helpers import fetch_records_async, merge_upsert_records_async
 logger = logging.getLogger(__name__)
 TABLE_NAME = "dbo.tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector"
 PRIMARY_KEY = "ID"
+DATE_ADDRESSED_COLUMN = "Date Addressed"
+
+
+def _format_date_addressed(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    for record in records:
+        value = record.get(DATE_ADDRESSED_COLUMN)
+        if isinstance(value, datetime):
+            record[DATE_ADDRESSED_COLUMN] = value.date().isoformat()
+    return records
 
 
 async def get_claims(
@@ -26,12 +36,13 @@ async def get_claims(
         if addressed is not None:
             filters["Addressed"] = str(addressed)
 
-        return await fetch_records_async(
+        records = await fetch_records_async(
             TABLE_NAME,
             limit=limit,
             offset=offset,
             filters=filters or None,
         )
+        return _format_date_addressed(records)
     except Exception as error:
         logger.exception("Failed to fetch claims")
         raise HTTPException(

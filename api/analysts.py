@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 
-from core.models.common import UpsertRequest, WriteResult
+from core.models.common import WriteResult
 from services.analysts_service import get_analysts as get_analysts_service
 from services.analysts_service import upsert_analysts as upsert_analysts_service
 from services.auth_service import get_current_user_from_token
@@ -22,5 +22,5 @@ async def get_analysts(
 
 
 @router.post("/upsert", response_model=WriteResult)
-async def upsert_analysts(payload: UpsertRequest) -> dict[str, Any]:
-    return await upsert_analysts_service(payload.records)
+async def upsert_analysts(payload: dict[str, Any]) -> dict[str, Any]:
+    return await upsert_analysts_service([payload])
