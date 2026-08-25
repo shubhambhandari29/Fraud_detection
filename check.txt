@@ -1,3 +1,1 @@
-CREATE USER [bb8645bb-88c9-4a65-bb39-adf60bd93fd8] FROM EXTERNAL PROVIDER;
-
-ALTER ROLE db_datareader ADD MEMBER [bb8645bb-88c9-4a65-bb39-adf60bd93fd8];
+SortByColumns(Filter(tblFraudThirdPartyAutoBIEDW_Roster, DURATION_STATUS <> "Permanent"),"USER_TYPE", SortOrder.Ascending, "ANALYST_NAME", SortOrder.Ascending)
