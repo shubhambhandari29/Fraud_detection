@@ -46,16 +46,9 @@ def _validate_record(record: dict[str, Any], allowed_columns: set[str]) -> None:
 def fetch_records(
     table: str,
     *,
-    limit: int = 100,
-    offset: int = 0,
     filters: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    """Return a page of rows from a known service-owned table."""
-    if not 1 <= limit <= 500:
-        raise ValueError("limit must be between 1 and 500")
-    if offset < 0:
-        raise ValueError("offset must be zero or greater")
-
+    """Return all matching rows from a known service-owned table."""
     with db_connection() as connection:
         cursor = connection.cursor()
         filter_values: list[Any] = []
@@ -67,13 +60,9 @@ def fetch_records(
                 filter_values.append(value)
             query_parts.append("WHERE " + " AND ".join(clauses))
 
-        query_parts.append(
-            "ORDER BY (SELECT NULL) OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"
-        )
-
         cursor.execute(
             " ".join(query_parts),
-            [*filter_values, offset, limit],
+            filter_values,
         )
         columns = [description[0] for description in cursor.description]
         return [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
@@ -175,16 +164,12 @@ def merge_upsert_records(
 async def fetch_records_async(
     table: str,
     *,
-    limit: int = 100,
-    offset: int = 0,
     filters: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     return await run_in_threadpool(
         partial(
             fetch_records,
             table=table,
-            limit=limit,
-            offset=offset,
             filters=filters,
         )
     )

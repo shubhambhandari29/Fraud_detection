@@ -15,14 +15,12 @@ router = APIRouter(dependencies=[Depends(get_current_user_from_token)])
 
 @router.get("/")
 async def get_claims(
-    limit: int = Query(default=100, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
     status: Literal["Pending", "Monitor", "Dismissed", "Blank", "Assigned"] | None = Query(
         default=None, alias="Status"
     ),
     addressed: bool | None = Query(default=None, alias="Addressed"),
 ) -> list[dict[str, Any]]:
-    return await get_claims_service(limit, offset, status, addressed)
+    return await get_claims_service(status, addressed)
 
 
 @router.post("/upsert", response_model=WriteResult)

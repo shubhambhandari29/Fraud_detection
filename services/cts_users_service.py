@@ -13,9 +13,9 @@ TABLE_NAME = "dbo.tblFraudThirdPartyAutoBIEDW_CTS_UserName"
 PRIMARY_KEY = "USER_NAME"
 
 
-async def get_cts_users(limit: int, offset: int) -> list[dict[str, Any]]:
+async def get_cts_users() -> list[dict[str, Any]]:
     try:
-        return await fetch_records_async(TABLE_NAME, limit=limit, offset=offset)
+        return await fetch_records_async(TABLE_NAME)
     except Exception as error:
         logger.exception("Failed to fetch CTS users")
         raise HTTPException(

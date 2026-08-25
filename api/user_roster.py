@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from core.models.common import WriteResult
 from services.auth_service import get_current_user_from_token
@@ -14,11 +14,8 @@ router = APIRouter(dependencies=[Depends(get_current_user_from_token)])
 
 
 @router.get("/")
-async def get_user_roster(
-    limit: int = Query(default=100, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
-) -> list[dict[str, Any]]:
-    return await get_user_roster_service(limit, offset)
+async def get_user_roster() -> list[dict[str, Any]]:
+    return await get_user_roster_service()
 
 
 @router.post("/upsert", response_model=WriteResult)

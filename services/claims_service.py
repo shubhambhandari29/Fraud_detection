@@ -24,8 +24,6 @@ def _format_date_addressed(records: list[dict[str, Any]]) -> list[dict[str, Any]
 
 
 async def get_claims(
-    limit: int,
-    offset: int,
     status: str | None = None,
     addressed: bool | None = None,
 ) -> list[dict[str, Any]]:
@@ -38,8 +36,6 @@ async def get_claims(
 
         records = await fetch_records_async(
             TABLE_NAME,
-            limit=limit,
-            offset=offset,
             filters=filters or None,
         )
         return _format_date_addressed(records)

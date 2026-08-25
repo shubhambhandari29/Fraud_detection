@@ -13,9 +13,9 @@ TABLE_NAME = "dbo.tblFraudThirdPartyAutoBIEDW_Roster"
 PRIMARY_KEY = "ID"
 
 
-async def get_user_roster(limit: int, offset: int) -> list[dict[str, Any]]:
+async def get_user_roster() -> list[dict[str, Any]]:
     try:
-        return await fetch_records_async(TABLE_NAME, limit=limit, offset=offset)
+        return await fetch_records_async(TABLE_NAME)
     except Exception as error:
         logger.exception("Failed to fetch user roster")
         raise HTTPException(
