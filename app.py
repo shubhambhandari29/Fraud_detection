@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from api.auth import router as auth_router
 from api.abi_litigation.claims import router as abi_litigation_router
@@ -13,7 +14,12 @@ from api.user_info import router as user_info_router
 from core.config import settings
 
 
-app = FastAPI(title="Fraud API", version="0.1.0")
+app = FastAPI(
+    title="Fraud API",
+    version="0.1.0",
+    swagger_ui_parameters={"syntaxHighlight": False},
+)
+app.add_middleware(GZipMiddleware, minimum_size=500, compresslevel=6)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
