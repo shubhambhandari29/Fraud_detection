@@ -12,7 +12,7 @@ from services.auth_service import get_current_user_from_token
 router = APIRouter(dependencies=[Depends(get_current_user_from_token)])
 
 
-@router.get("/get")
+@router.get("/")
 async def get_abi_litigation_claims() -> list[dict[str, Any]]:
     return await get_claims()
 

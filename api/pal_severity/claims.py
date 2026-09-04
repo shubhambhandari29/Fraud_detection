@@ -12,7 +12,7 @@ from services.pal_severity.claims_service import get_claims, upsert_claims
 router = APIRouter(dependencies=[Depends(get_current_user_from_token)])
 
 
-@router.get("/get")
+@router.get("/")
 async def get_pal_severity_claims() -> list[dict[str, Any]]:
     return await get_claims()
 
