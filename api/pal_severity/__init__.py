@@ -1,0 +1,1 @@
+"""PAL Severity API routes."""

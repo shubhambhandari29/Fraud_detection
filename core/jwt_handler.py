@@ -11,19 +11,19 @@ from core.config import settings
 ALGORITHM = "HS256"
 
 
-def create_access_token(user_id: str, role: str | None = None) -> str:
+def create_access_token(user_id: str, models: str | None = None) -> str:
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_VALIDITY)
     payload = {"sub": str(user_id), "exp": expires_at, "type": "access"}
-    if role is not None:
-        payload["role"] = role
+    if models is not None:
+        payload["models"] = models
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(user_id: str, role: str | None = None) -> str:
+def create_refresh_token(user_id: str, models: str | None = None) -> str:
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.REFRESH_TOKEN_VALIDITY)
     payload = {"sub": str(user_id), "exp": expires_at, "type": "refresh"}
-    if role is not None:
-        payload["role"] = role
+    if models is not None:
+        payload["models"] = models
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 

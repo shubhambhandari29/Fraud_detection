@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, Query
 
 from core.models.common import WriteResult
 from services.auth_service import get_current_user_from_token
-from services.claims_service import get_claims as get_claims_service
-from services.claims_service import upsert_claims as upsert_claims_service
+from services.third_party_auto.claims_service import get_claims as get_claims_service
+from services.third_party_auto.claims_service import upsert_claims as upsert_claims_service
 
 
 router = APIRouter(dependencies=[Depends(get_current_user_from_token)])

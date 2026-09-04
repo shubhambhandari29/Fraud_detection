@@ -6,8 +6,12 @@ from fastapi import APIRouter, Depends
 
 from core.models.common import WriteResult
 from services.auth_service import get_current_user_from_token
-from services.user_roster_service import get_user_roster as get_user_roster_service
-from services.user_roster_service import upsert_user_roster as upsert_user_roster_service
+from services.third_party_auto.user_roster_service import (
+    get_user_roster as get_user_roster_service,
+)
+from services.third_party_auto.user_roster_service import (
+    upsert_user_roster as upsert_user_roster_service,
+)
 
 
 router = APIRouter(dependencies=[Depends(get_current_user_from_token)])

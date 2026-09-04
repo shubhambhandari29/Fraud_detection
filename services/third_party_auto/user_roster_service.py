@@ -1,11 +1,15 @@
-"""User roster table operations."""
+"""Third Party Auto user roster table operations."""
 
 import logging
 from typing import Any
 
 from fastapi import HTTPException
 
-from core.db_helpers import fetch_records_async, merge_upsert_records_async
+from core.db_helpers import (
+    fetch_records_async,
+    merge_upsert_records_async,
+    serialize_record_dates,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -15,7 +19,7 @@ PRIMARY_KEY = "ID"
 
 async def get_user_roster() -> list[dict[str, Any]]:
     try:
-        return await fetch_records_async(TABLE_NAME)
+        return serialize_record_dates(await fetch_records_async(TABLE_NAME))
     except Exception as error:
         logger.exception("Failed to fetch user roster")
         raise HTTPException(

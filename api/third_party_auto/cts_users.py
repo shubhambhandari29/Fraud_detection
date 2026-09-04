@@ -6,8 +6,12 @@ from fastapi import APIRouter, Depends
 
 from core.models.common import WriteResult
 from services.auth_service import get_current_user_from_token
-from services.cts_users_service import get_cts_users as get_cts_users_service
-from services.cts_users_service import upsert_cts_users as upsert_cts_users_service
+from services.third_party_auto.cts_users_service import (
+    get_cts_users as get_cts_users_service,
+)
+from services.third_party_auto.cts_users_service import (
+    upsert_cts_users as upsert_cts_users_service,
+)
 
 
 router = APIRouter(dependencies=[Depends(get_current_user_from_token)])

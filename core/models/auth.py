@@ -1,7 +1,5 @@
 """Authentication API models."""
 
-from typing import Literal
-
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -15,7 +13,7 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    role: Literal["user", "admin"]
+    models: str
     branch: str | None = None
 
 

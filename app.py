@@ -4,10 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth import router as auth_router
-from api.claims import router as claims_router
-from api.cts_users import router as cts_users_router
+from api.abi_litigation.claims import router as abi_litigation_router
+from api.pal_severity.claims import router as pal_severity_router
+from api.third_party_auto.claims import router as claims_router
+from api.third_party_auto.cts_users import router as cts_users_router
+from api.third_party_auto.user_roster import router as user_roster_router
 from api.user_info import router as user_info_router
-from api.user_roster import router as user_roster_router
 from core.config import settings
 
 
@@ -31,3 +33,13 @@ app.include_router(user_info_router, prefix="/api", tags=["auth"])
 app.include_router(claims_router, prefix="/claims", tags=["claims"])
 app.include_router(cts_users_router, prefix="/cts_users", tags=["cts_users"])
 app.include_router(user_roster_router, prefix="/user_roster", tags=["user_roster"])
+app.include_router(
+    abi_litigation_router,
+    prefix="/abi_litigation",
+    tags=["abi_litigation"],
+)
+app.include_router(
+    pal_severity_router,
+    prefix="/pal_severity",
+    tags=["pal_severity"],
+)

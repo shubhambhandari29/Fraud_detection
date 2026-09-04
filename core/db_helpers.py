@@ -1,6 +1,7 @@
 """Reusable SQL Server read and upsert helpers."""
 
 import re
+from datetime import date, datetime
 from functools import partial
 from typing import Any
 
@@ -11,6 +12,21 @@ from db import db_connection
 
 
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_ ]*$")
+
+
+def serialize_record_dates(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return SQL records with every date/datetime represented as YYYY-MM-DD."""
+    return [
+        {
+            column: value.date().isoformat()
+            if isinstance(value, datetime)
+            else value.isoformat()
+            if isinstance(value, date)
+            else value
+            for column, value in record.items()
+        }
+        for record in records
+    ]
 
 
 def _quote_identifier(identifier: str) -> str:

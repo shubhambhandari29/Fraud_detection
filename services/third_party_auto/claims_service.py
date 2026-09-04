@@ -1,26 +1,20 @@
-"""Claims table operations."""
+"""Third Party Auto claims table operations."""
 
 import logging
-from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
 
-from core.db_helpers import fetch_records_async, merge_upsert_records_async
+from core.db_helpers import (
+    fetch_records_async,
+    merge_upsert_records_async,
+    serialize_record_dates,
+)
 
 
 logger = logging.getLogger(__name__)
 TABLE_NAME = "dbo.tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector"
 PRIMARY_KEY = "ID"
-DATE_ADDRESSED_COLUMN = "Date Addressed"
-
-
-def _format_date_addressed(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    for record in records:
-        value = record.get(DATE_ADDRESSED_COLUMN)
-        if isinstance(value, datetime):
-            record[DATE_ADDRESSED_COLUMN] = value.date().isoformat()
-    return records
 
 
 async def get_claims(
@@ -38,7 +32,7 @@ async def get_claims(
             TABLE_NAME,
             filters=filters or None,
         )
-        return _format_date_addressed(records)
+        return serialize_record_dates(records)
     except Exception as error:
         logger.exception("Failed to fetch claims")
         raise HTTPException(
