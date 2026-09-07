@@ -1,1 +1,1 @@
-SortByColumns(Filter(tblFraudThirdPartyAutoBIEDW_Roster, DURATION_STATUS <> "Permanent"),"USER_TYPE", SortOrder.Ascending, "ANALYST_NAME", SortOrder.Ascending)
+http://localhost:8000/claims/?Addressed=False&Selected=1&Status=%3C%3EMonitor&REFERRAL_MECHANISM=%3C%3E%27No+Referral%27
