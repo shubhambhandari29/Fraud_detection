@@ -63,6 +63,7 @@ def fetch_records(
     table: str,
     *,
     filters: dict[str, Any] | None = None,
+    validate_filters: bool = False,
 ) -> list[dict[str, Any]]:
     """Return all matching rows from a known service-owned table."""
     with db_connection() as connection:
@@ -70,6 +71,25 @@ def fetch_records(
         filter_values: list[Any] = []
         query_parts = [f"SELECT * FROM {_quote_table(table)}"]
         if filters:
+            if validate_filters:
+                allowed_columns = _get_table_columns(cursor, table)
+                columns_by_casefold = {
+                    column.casefold(): column for column in allowed_columns
+                }
+                unknown_columns = sorted(
+                    column
+                    for column in filters
+                    if column.casefold() not in columns_by_casefold
+                )
+                if unknown_columns:
+                    raise ValueError(
+                        f"Unknown filter column(s): {', '.join(unknown_columns)}"
+                    )
+                filters = {
+                    columns_by_casefold[column.casefold()]: value
+                    for column, value in filters.items()
+                }
+
             clauses = []
             for column, value in filters.items():
                 clauses.append(f"{_quote_identifier(column)} = ?")
@@ -181,12 +201,14 @@ async def fetch_records_async(
     table: str,
     *,
     filters: dict[str, Any] | None = None,
+    validate_filters: bool = False,
 ) -> list[dict[str, Any]]:
     return await run_in_threadpool(
         partial(
             fetch_records,
             table=table,
             filters=filters,
+            validate_filters=validate_filters,
         )
     )
 

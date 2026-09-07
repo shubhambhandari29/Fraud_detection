@@ -17,9 +17,18 @@ TABLE_NAME = "dbo.tblALLitigation_OpenClaimsPredictions_Selector"
 PRIMARY_KEY = "ID"
 
 
-async def get_claims() -> list[dict[str, Any]]:
+async def get_claims(
+    filters: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     try:
-        return serialize_record_dates(await fetch_records_async(TABLE_NAME))
+        records = await fetch_records_async(
+            TABLE_NAME,
+            filters=filters or None,
+            validate_filters=True,
+        )
+        return serialize_record_dates(records)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail={"error": str(error)}) from error
     except Exception as error:
         logger.exception("Failed to fetch ABI Litigation claims")
         raise HTTPException(
