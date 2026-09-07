@@ -18,21 +18,29 @@ PRIMARY_KEY = "ID"
 
 
 async def get_claims(
-    status: str | None = None,
-    addressed: bool | None = None,
+    filters: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     try:
-        filters: dict[str, Any] = {}
-        if status is not None:
-            filters["Status"] = "" if status == "Blank" else status
-        if addressed is not None:
-            filters["Addressed"] = str(addressed)
+        normalized_filters = dict(filters or {})
+        for column, value in list(normalized_filters.items()):
+            text_value = str(value)
+            if column.casefold() == "status" and text_value.casefold() == "blank":
+                normalized_filters[column] = ""
+            if column.casefold() == "addressed" and text_value.casefold() in {
+                "true",
+                "false",
+            }:
+                normalized_filters[column] = text_value.title()
 
         records = await fetch_records_async(
             TABLE_NAME,
-            filters=filters or None,
+            filters=normalized_filters or None,
+            validate_filters=True,
+            allow_not_equal_filters=True,
         )
         return serialize_record_dates(records)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail={"error": str(error)}) from error
     except Exception as error:
         logger.exception("Failed to fetch claims")
         raise HTTPException(

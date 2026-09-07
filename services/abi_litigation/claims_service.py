@@ -25,6 +25,7 @@ async def get_claims(
             TABLE_NAME,
             filters=filters or None,
             validate_filters=True,
+            allow_not_equal_filters=True,
         )
         return serialize_record_dates(records)
     except ValueError as error:

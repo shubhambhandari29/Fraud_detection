@@ -64,6 +64,7 @@ def fetch_records(
     *,
     filters: dict[str, Any] | None = None,
     validate_filters: bool = False,
+    allow_not_equal_filters: bool = False,
 ) -> list[dict[str, Any]]:
     """Return all matching rows from a known service-owned table."""
     with db_connection() as connection:
@@ -92,7 +93,14 @@ def fetch_records(
 
             clauses = []
             for column, value in filters.items():
-                clauses.append(f"{_quote_identifier(column)} = ?")
+                operator = "="
+                if allow_not_equal_filters and isinstance(value, str):
+                    if value.startswith("<>"):
+                        operator = "<>"
+                        value = value[2:]
+                        if len(value) >= 2 and value[0] == value[-1] == "'":
+                            value = value[1:-1]
+                clauses.append(f"{_quote_identifier(column)} {operator} ?")
                 filter_values.append(value)
             query_parts.append("WHERE " + " AND ".join(clauses))
 
@@ -202,6 +210,7 @@ async def fetch_records_async(
     *,
     filters: dict[str, Any] | None = None,
     validate_filters: bool = False,
+    allow_not_equal_filters: bool = False,
 ) -> list[dict[str, Any]]:
     return await run_in_threadpool(
         partial(
@@ -209,6 +218,7 @@ async def fetch_records_async(
             table=table,
             filters=filters,
             validate_filters=validate_filters,
+            allow_not_equal_filters=allow_not_equal_filters,
         )
     )
 
