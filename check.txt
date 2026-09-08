@@ -1,1 +1,9 @@
-http://localhost:8000/claims/?Addressed=False&Selected=1&Status=%3C%3EMonitor&REFERRAL_MECHANISM=%3C%3E%27No+Referral%27
+http://localhost:8000/pal_severity/?Selected=1&Threshold_Filter=%3E%3D%2475000
+
+Threshold_Filter
+>=$75000
+Selected
+1
+
+
+http://localhost:8000/pal_severity/
