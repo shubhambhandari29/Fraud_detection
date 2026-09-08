@@ -7,3 +7,6 @@ Selected
 
 
 http://localhost:8000/pal_severity/
+
+
+query:   select * FROM [CLMDS_DataModelingAndTextMining].[dbo].[tblPALSeverity_OpenClaimsPredictions_Selector_GAME] where Threshold_Filter ='< $75000' and selected = 1
