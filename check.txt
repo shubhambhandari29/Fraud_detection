@@ -1,12 +1,34 @@
-http://localhost:8000/pal_severity/?Selected=1&Threshold_Filter=%3E%3D%2475000
-
-Threshold_Filter
->=$75000
-Selected
-1
-
-
-http://localhost:8000/pal_severity/
-
-
-query:   select * FROM [CLMDS_DataModelingAndTextMining].[dbo].[tblPALSeverity_OpenClaimsPredictions_Selector_GAME] where Threshold_Filter ='< $75000' and selected = 1
+//Status Blank Error
+UpdateContext({StatusBlankError: If(Status_dd_3.Selected.Value = "", true, false) Or If(IsBlank(Status_dd_3.Selected.Value), true, false)});
+ 
+//No Update Error
+UpdateContext({NoUpdateError: If((Status_dd_3.Selected.Value = ThisItem.Action) And (Feedback_CB_3.Selected.Value = ThisItem.ACTION_DETAILS) And (Feedback_Notes_3.Text = ThisItem.Feedback), true, false)});
+ 
+//FeedbackDD Blank Error
+//UpdateContext({FeedbackDDBlankError: If(Status_dd_3.Selected.Value <> "Assigned" && IsBlank(Feedback_CB_3.Selected.Value), true, false)});
+ 
+//Feedback Notes blank Error
+//UpdateContext({FeedbackNotesBlankError: If(Feedback_Notes.Text = "", true, false)});
+ 
+//Condition to update
+If(
+    StatusBlankError || NoUpdateError,//|| FeedbackDDBlankError, //|| FeedbackNotesBlankError
+    Notify("Action is mandatory fields. Please select action to update the record. Or you didn't changed anything beetween Action, Action Details Input notes. Please change any to Update.", NotificationType.Error, 5000),
+    Patch(
+    tblPALSeverity_OpenClaimsPredictions_Selector_GAME,
+    LookUp(tblPALSeverity_OpenClaimsPredictions_Selector_GAME, ID = ThisItem.ID),
+    {Action:Status_dd_3.Selected.Value,
+    ACTION_DETAILS:Left(Trim(Concat(Feedback_CB_3.SelectedItems, Value & ", ")), Len(Trim(Concat(Feedback_CB_3.SelectedItems, Value & ", "))) -1),
+    Feedback:Feedback_Notes_3.Text,
+    'Last Updated By': User().Email & "-" & Now() & ";" & ThisItem.'Last Updated By',
+    'Date Addressed':Now()});
+    Refresh(tblPALSeverity_OpenClaimsPredictions_Selector_GAME)
+);
+If(Status_dd_3.Selected.Value = "Fastbreak",
+    If(IsBlank(LookUp(tblSeverity_Fastbreak_Referral, DERIVE_CLM_FTR_NBR = (ThisItem.CLM_NBR & "-" & ThisItem.CLM_FTR_NBR))),
+    Patch(tblSeverity_Fastbreak_Referral, Defaults(tblSeverity_Fastbreak_Referral),
+    {DERIVE_CLM_FTR_NBR:derive_clm_ftr_nbr_2.Text,CLM_NBR:ThisItem.CLM_NBR,CLM_FTR_NBR:ThisItem.CLM_FTR_NBR,FTR_CREAT_DT:ThisItem.FTR_CREAT_DT,CLM_LOB_DESC:ThisItem.CLM_LOB_DESC,FTR_TYPE_DESC:ThisItem.FTR_TYPE_DESC,FTR_COVG_TYPE_DESC:ThisItem.FTR_COVG_TYPE_DESC,ACDNT_ST_ABBR:ThisItem.ACDNT_ST_ABBR,DT_OF_LOSS:ThisItem.DT_OF_LOSS,OUTSTANDINGLOSSES:ThisItem.OUTSTANDINGLOSSES,FTR_ASGNED_USER_FIRST_NM:ThisItem.FTR_ASGNED_USER_FIRST_NM,FTR_ASGNED_USER_LAST_NM:ThisItem.FTR_ASGNED_USER_LAST_NM,FTR_ASGNED_GRP_NM:ThisItem.FTR_ASGNED_GRP_NM,INSERTDATE:Now(),MODEL:"PAL_Severity"}),
+    Notify("Claim is already exist in Fastbreak process")
+    )
+);
+Refresh(tblSeverity_Fastbreak_Referral)
