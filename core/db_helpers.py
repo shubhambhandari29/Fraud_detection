@@ -12,6 +12,7 @@ from db import db_connection
 
 
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_ ]*$")
+LAST_UPDATED_BY_COLUMN = "Last Updated By"
 
 
 def serialize_record_dates(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -27,6 +28,17 @@ def serialize_record_dates(records: list[dict[str, Any]]) -> list[dict[str, Any]
         }
         for record in records
     ]
+
+
+def format_last_updated_by_entry(user_id: str, now: datetime | None = None) -> str:
+    """Format a server-owned claim audit entry like user-9/09/2026 3:50PM;."""
+    timestamp = now or datetime.now()
+    hour = timestamp.hour % 12 or 12
+    meridiem = "AM" if timestamp.hour < 12 else "PM"
+    return (
+        f"{user_id}-{timestamp.month}/{timestamp.day:02d}/{timestamp.year} "
+        f"{hour}:{timestamp.minute:02d}{meridiem};"
+    )
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -178,6 +190,7 @@ def merge_upsert_records(
     key_column: str,
     *,
     identity_key: bool = False,
+    audit_user_id: str | None = None,
 ) -> dict[str, Any]:
     """Insert or update a batch in one transaction using a fixed key."""
     if not records:
@@ -188,7 +201,27 @@ def merge_upsert_records(
         try:
             cursor = connection.cursor()
             allowed_columns = _get_table_columns(cursor, table)
-            for record in records:
+            for submitted_record in records:
+                record = dict(submitted_record)
+                if audit_user_id is not None:
+                    if LAST_UPDATED_BY_COLUMN not in allowed_columns:
+                        raise ValueError(
+                            f"Unknown audit column: {LAST_UPDATED_BY_COLUMN}"
+                        )
+                    existing_history = ""
+                    if key_column in record:
+                        cursor.execute(
+                            f"SELECT {_quote_identifier(LAST_UPDATED_BY_COLUMN)} "
+                            f"FROM {_quote_table(table)} "
+                            f"WHERE {_quote_identifier(key_column)} = ?",
+                            [record[key_column]],
+                        )
+                        existing_row = cursor.fetchone()
+                        if existing_row and existing_row[0]:
+                            existing_history = str(existing_row[0])
+                    record[LAST_UPDATED_BY_COLUMN] = (
+                        format_last_updated_by_entry(audit_user_id) + existing_history
+                    )
                 _validate_record(record, allowed_columns)
                 _merge_record(
                     cursor,
@@ -229,6 +262,7 @@ async def merge_upsert_records_async(
     key_column: str,
     *,
     identity_key: bool = False,
+    audit_user_id: str | None = None,
 ) -> dict[str, Any]:
     return await run_in_threadpool(
         partial(
@@ -237,5 +271,6 @@ async def merge_upsert_records_async(
             records=records,
             key_column=key_column,
             identity_key=identity_key,
+            audit_user_id=audit_user_id,
         )
     )

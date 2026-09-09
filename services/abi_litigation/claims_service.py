@@ -37,9 +37,17 @@ async def get_claims(
         ) from error
 
 
-async def upsert_claims(records: list[dict[str, Any]]) -> dict[str, Any]:
+async def upsert_claims(
+    records: list[dict[str, Any]],
+    user_id: str,
+) -> dict[str, Any]:
     try:
-        return await merge_upsert_records_async(TABLE_NAME, records, PRIMARY_KEY)
+        return await merge_upsert_records_async(
+            TABLE_NAME,
+            records,
+            PRIMARY_KEY,
+            audit_user_id=user_id,
+        )
     except ValueError as error:
         raise HTTPException(status_code=400, detail={"error": str(error)}) from error
     except Exception as error:

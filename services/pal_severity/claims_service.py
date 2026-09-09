@@ -9,12 +9,14 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi import HTTPException
 
 from core.db_helpers import (
+    LAST_UPDATED_BY_COLUMN,
     _get_table_columns,
     _merge_record,
     _quote_identifier,
     _quote_table,
     _validate_record,
     fetch_records_async,
+    format_last_updated_by_entry,
     serialize_record_dates,
 )
 from db import db_connection
@@ -108,7 +110,10 @@ def _insert_fastbreak_if_missing(cursor: Any, referral: dict[str, Any]) -> None:
     )
 
 
-def upsert_claims_transaction(records: list[dict[str, Any]]) -> dict[str, Any]:
+def upsert_claims_transaction(
+    records: list[dict[str, Any]],
+    user_id: str,
+) -> dict[str, Any]:
     if not records:
         raise ValueError("At least one record is required")
 
@@ -118,12 +123,18 @@ def upsert_claims_transaction(records: list[dict[str, Any]]) -> dict[str, Any]:
             claim_columns = _get_table_columns(cursor, TABLE_NAME)
             referral_columns = _get_table_columns(cursor, FASTBREAK_TABLE_NAME)
 
-            for record in records:
+            for submitted_record in records:
+                record = dict(submitted_record)
                 _validate_record(record, claim_columns)
                 if PRIMARY_KEY not in record:
                     raise ValueError(f"Missing required upsert key: {PRIMARY_KEY}")
 
                 existing_claim = _get_claim_record(cursor, record[PRIMARY_KEY])
+                record[LAST_UPDATED_BY_COLUMN] = (
+                    format_last_updated_by_entry(user_id)
+                    + str(existing_claim.get(LAST_UPDATED_BY_COLUMN) or "")
+                )
+                _validate_record(record, claim_columns)
                 updated_claim = {**existing_claim, **record}
                 _merge_record(
                     cursor,
@@ -146,9 +157,14 @@ def upsert_claims_transaction(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {"message": "Upsert successful", "count": len(records)}
 
 
-async def upsert_claims(records: list[dict[str, Any]]) -> dict[str, Any]:
+async def upsert_claims(
+    records: list[dict[str, Any]],
+    user_id: str,
+) -> dict[str, Any]:
     try:
-        return await run_in_threadpool(partial(upsert_claims_transaction, records))
+        return await run_in_threadpool(
+            partial(upsert_claims_transaction, records, user_id)
+        )
     except ValueError as error:
         raise HTTPException(status_code=400, detail={"error": str(error)}) from error
     except Exception as error:
