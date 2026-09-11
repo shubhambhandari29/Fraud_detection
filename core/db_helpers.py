@@ -87,19 +87,19 @@ def fetch_records(
             if validate_filters:
                 allowed_columns = _get_table_columns(cursor, table)
                 columns_by_casefold = {
-                    column.casefold(): column for column in allowed_columns
+                    column.strip().casefold(): column for column in allowed_columns
                 }
                 unknown_columns = sorted(
                     column
                     for column in filters
-                    if column.casefold() not in columns_by_casefold
+                    if column.strip().casefold() not in columns_by_casefold
                 )
                 if unknown_columns:
                     raise ValueError(
                         f"Unknown filter column(s): {', '.join(unknown_columns)}"
                     )
                 filters = {
-                    columns_by_casefold[column.casefold()]: value
+                    columns_by_casefold[column.strip().casefold()]: value
                     for column, value in filters.items()
                 }
 
