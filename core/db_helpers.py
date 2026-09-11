@@ -6,7 +6,7 @@ from functools import partial
 from typing import Any
 
 from fastapi.concurrency import run_in_threadpool
-from pyodbc import Cursor
+from pyodbc import Cursor, Error as PyodbcError
 
 from db import db_connection
 
@@ -116,10 +116,20 @@ def fetch_records(
                 filter_values.append(value)
             query_parts.append("WHERE " + " AND ".join(clauses))
 
-        cursor.execute(
-            " ".join(query_parts),
-            filter_values,
-        )
+        try:
+            cursor.execute(
+                " ".join(query_parts),
+                filter_values,
+            )
+        except PyodbcError as error:
+            error_text = " ".join(str(part) for part in error.args)
+            if filters and (
+                "42S22" in error_text or "Invalid column name" in error_text
+            ):
+                raise ValueError(
+                    f"Unknown filter column(s): {', '.join(filters)}"
+                ) from error
+            raise
         columns = [description[0] for description in cursor.description]
         return [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
 
