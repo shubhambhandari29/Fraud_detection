@@ -1,8 +1,9 @@
-1. dbo.tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector
-2. dbo.tblFraudThirdPartyAutoBIEDW_Roster
-3. dbo.tblFraudThirdPartyAutoBIEDW_CTS_UserName
-ABI Litigation:
-4. dbo.tblALLitigation_OpenClaimsPredictions_Selector
-PAL Severity:
-5. dbo.tblPALSeverity_OpenClaimsPredictions_Selector_GAME
-6. dbo.tblSeverity_Fastbreak_Referral
+SELECT DB_NAME() AS CurrentDatabase;
+
+SELECT
+    COLUMN_NAME,
+    LEN(COLUMN_NAME) AS NameLength
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'dbo'
+  AND TABLE_NAME = 'tblPALSeverity_OpenClaimsPredictions_Selector_GAME'
+  AND COLUMN_NAME LIKE '%Threshold%';
