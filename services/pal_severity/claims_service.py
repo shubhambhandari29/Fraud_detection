@@ -51,7 +51,6 @@ async def get_claims(
         records = await fetch_records_async(
             TABLE_NAME,
             filters=filters or None,
-            validate_filters=True,
             allow_not_equal_filters=True,
         )
         return serialize_record_dates(records)

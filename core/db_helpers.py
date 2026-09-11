@@ -1,5 +1,6 @@
 """Reusable SQL Server read and upsert helpers."""
 
+import logging
 import re
 from datetime import date, datetime
 from functools import partial
@@ -11,6 +12,7 @@ from pyodbc import Cursor, Error as PyodbcError
 from db import db_connection
 
 
+logger = logging.getLogger(__name__)
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_ ]*$")
 LAST_UPDATED_BY_COLUMN = "Last Updated By"
 
@@ -122,6 +124,11 @@ def fetch_records(
                 filter_values,
             )
         except PyodbcError as error:
+            logger.exception(
+                "SQL Server rejected filtered query for table %s; filter columns=%s",
+                table,
+                list(filters or {}),
+            )
             error_text = " ".join(str(part) for part in error.args)
             if filters and (
                 "42S22" in error_text or "Invalid column name" in error_text
