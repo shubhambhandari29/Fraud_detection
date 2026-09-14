@@ -1,9 +1,5 @@
-SELECT DB_NAME() AS CurrentDatabase;
-
-SELECT
-    COLUMN_NAME,
-    LEN(COLUMN_NAME) AS NameLength
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'dbo'
-  AND TABLE_NAME = 'tblPALSeverity_OpenClaimsPredictions_Selector_GAME'
-  AND COLUMN_NAME LIKE '%Threshold%';
+Addressed: "False",
+    Selected: "1",
+    Status: "<>Monitor",
+    REFERRAL_MECHANISM: "<>'No Referral'",
+    Sort_Order: "ML_SCORE: Descending, SIU_G_SCORE: Descending, WATCHLIST_SCORE: Descending, IES: Descending, low_apd_pay: Descending"
