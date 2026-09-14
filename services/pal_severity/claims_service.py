@@ -17,6 +17,7 @@ from core.db_helpers import (
     _validate_record,
     fetch_records_async,
     format_last_updated_by_entry,
+    pop_query_parameter,
     serialize_record_dates,
 )
 from db import db_connection
@@ -48,10 +49,13 @@ async def get_claims(
     filters: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     try:
+        normalized_filters = dict(filters or {})
+        sort_order = pop_query_parameter(normalized_filters, "Sort_Order")
         records = await fetch_records_async(
             TABLE_NAME,
-            filters=filters or None,
+            filters=normalized_filters or None,
             allow_not_equal_filters=True,
+            sort_order=sort_order,
         )
         return serialize_record_dates(records)
     except ValueError as error:

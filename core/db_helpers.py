@@ -73,24 +73,70 @@ def _validate_record(record: dict[str, Any], allowed_columns: set[str]) -> None:
         _quote_identifier(column)
 
 
+def pop_query_parameter(
+    parameters: dict[str, Any], name: str
+) -> Any | None:
+    """Remove and return a case-insensitive API control parameter."""
+    matching_key = next(
+        (key for key in parameters if key.strip().casefold() == name.casefold()),
+        None,
+    )
+    return parameters.pop(matching_key) if matching_key is not None else None
+
+
+def _parse_sort_order(sort_order: str) -> list[tuple[str, str]]:
+    clauses: list[tuple[str, str]] = []
+    for expression in sort_order.split(","):
+        expression = expression.strip()
+        if not expression:
+            continue
+        if ":" not in expression:
+            raise ValueError(
+                "Invalid Sort_Order. Use 'Column: Ascending' or "
+                "'Column: Descending'"
+            )
+        column, direction = (part.strip() for part in expression.split(":", 1))
+        direction_sql = {
+            "ascending": "ASC",
+            "asc": "ASC",
+            "descending": "DESC",
+            "desc": "DESC",
+        }.get(direction.casefold())
+        if not column or direction_sql is None:
+            raise ValueError(
+                "Invalid Sort_Order. Use 'Column: Ascending' or "
+                "'Column: Descending'"
+            )
+        _quote_identifier(column)
+        clauses.append((column, direction_sql))
+    if not clauses:
+        raise ValueError("Sort_Order cannot be empty")
+    return clauses
+
+
 def fetch_records(
     table: str,
     *,
     filters: dict[str, Any] | None = None,
     validate_filters: bool = False,
     allow_not_equal_filters: bool = False,
+    sort_order: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return all matching rows from a known service-owned table."""
     with db_connection() as connection:
         cursor = connection.cursor()
         filter_values: list[Any] = []
         query_parts = [f"SELECT * FROM {_quote_table(table)}"]
+        parsed_sort_order = _parse_sort_order(sort_order) if sort_order else []
+        allowed_columns: set[str] | None = None
+        columns_by_casefold: dict[str, str] = {}
+        if validate_filters and (filters or parsed_sort_order):
+            allowed_columns = _get_table_columns(cursor, table)
+            columns_by_casefold = {
+                column.strip().casefold(): column for column in allowed_columns
+            }
         if filters:
             if validate_filters:
-                allowed_columns = _get_table_columns(cursor, table)
-                columns_by_casefold = {
-                    column.strip().casefold(): column for column in allowed_columns
-                }
                 unknown_columns = sorted(
                     column
                     for column in filters
@@ -117,6 +163,29 @@ def fetch_records(
                 clauses.append(f"{_quote_identifier(column)} {operator} ?")
                 filter_values.append(value)
             query_parts.append("WHERE " + " AND ".join(clauses))
+
+        if parsed_sort_order:
+            if validate_filters:
+                unknown_sort_columns = sorted(
+                    column
+                    for column, _ in parsed_sort_order
+                    if column.strip().casefold() not in columns_by_casefold
+                )
+                if unknown_sort_columns:
+                    raise ValueError(
+                        "Unknown sort column(s): " + ", ".join(unknown_sort_columns)
+                    )
+                parsed_sort_order = [
+                    (columns_by_casefold[column.strip().casefold()], direction)
+                    for column, direction in parsed_sort_order
+                ]
+            query_parts.append(
+                "ORDER BY "
+                + ", ".join(
+                    f"{_quote_identifier(column)} {direction}"
+                    for column, direction in parsed_sort_order
+                )
+            )
 
         try:
             cursor.execute(
@@ -261,6 +330,7 @@ async def fetch_records_async(
     filters: dict[str, Any] | None = None,
     validate_filters: bool = False,
     allow_not_equal_filters: bool = False,
+    sort_order: str | None = None,
 ) -> list[dict[str, Any]]:
     return await run_in_threadpool(
         partial(
@@ -269,6 +339,7 @@ async def fetch_records_async(
             filters=filters,
             validate_filters=validate_filters,
             allow_not_equal_filters=allow_not_equal_filters,
+            sort_order=sort_order,
         )
     )
 

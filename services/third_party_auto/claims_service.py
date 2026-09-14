@@ -14,6 +14,7 @@ from core.db_helpers import (
     fetch_records_async,
     format_last_updated_by_entry,
     merge_upsert_records_async,
+    pop_query_parameter,
     serialize_record_dates,
 )
 from db import db_connection
@@ -32,6 +33,7 @@ async def get_claims(
 ) -> list[dict[str, Any]]:
     try:
         normalized_filters = dict(filters or {})
+        sort_order = pop_query_parameter(normalized_filters, "Sort_Order")
         for column, value in list(normalized_filters.items()):
             text_value = str(value)
             if column.casefold() == "status" and text_value.casefold() == "blank":
@@ -47,6 +49,7 @@ async def get_claims(
             filters=normalized_filters or None,
             validate_filters=True,
             allow_not_equal_filters=True,
+            sort_order=sort_order,
         )
         return serialize_record_dates(records)
     except ValueError as error:
