@@ -11,7 +11,7 @@ from core.models.auth import LoginRequest, LoginResponse, UserResponse
 
 
 TEMPORARY_PASSWORD = "12345678"
-AVAILABLE_MODELS = "fraud, litigation, severity"
+AVAILABLE_MODELS = "fraud, litigation, severity, subrogation"
 SESSION_COOKIE_NAME = "session"
 REFRESH_COOKIE_NAME = "refresh_session"
 
