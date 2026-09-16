@@ -159,6 +159,35 @@ def test_api_returns_empty_list(monkeypatch, authenticated_client):
     assert response.json() == []
 
 
+@pytest.mark.parametrize("present_model", service.MODELS)
+def test_api_sql_null_arrays_are_empty_but_null_fields_are_preserved(
+    monkeypatch, authenticated_client, present_model
+):
+    records = [{"Predictions": None, "Action": None}]
+    columns = [
+        json.dumps(records) if model == present_model else None
+        for model in service.MODELS
+    ]
+    mock_connection(monkeypatch, [("85-00837106", *columns)])
+
+    response = authenticated_client.get("/landing/")
+
+    assert response.status_code == 200
+    assert response.json() == [{
+        "claim_number": "85-00837106",
+        **{model: records if model == present_model else [] for model in service.MODELS},
+    }]
+
+
+def test_api_malformed_json_is_not_silently_replaced_with_empty_array(
+    monkeypatch, authenticated_client
+):
+    mock_connection(monkeypatch, [("85-00837106", "broken-json", None, None, None)])
+    response = authenticated_client.get("/landing/")
+    assert response.status_code == 500
+    assert response.json() == {"detail": {"error": "Database operation failed"}}
+
+
 def test_api_requires_authentication():
     assert TestClient(app).get("/landing/").status_code == 401
 

@@ -88,10 +88,10 @@ LANDING_QUERY = NORMALIZED_ROWS_CTE + """
     SELECT claim_number FROM normalized_rows GROUP BY claim_number
 )
 SELECT claims.claim_number,
-       fraud.records AS fraud,
-       litigation.records AS litigation,
-       severity.records AS severity,
-       subrogation.records AS subrogation
+       COALESCE(fraud.records, N'[]') AS fraud,
+       COALESCE(litigation.records, N'[]') AS litigation,
+       COALESCE(severity.records, N'[]') AS severity,
+       COALESCE(subrogation.records, N'[]') AS subrogation
 FROM claims
 """ + "\n".join(
     f"""OUTER APPLY (
@@ -116,7 +116,9 @@ def fetch_landing_claims() -> list[LandingClaim]:
                 {
                     "claim_number": row[0],
                     **{
-                        model: json.loads(row[index])
+                        # A SQL NULL array means no model records; null fields
+                        # inside an existing JSON record must remain intact.
+                        model: [] if row[index] is None else json.loads(row[index])
                         for index, model in enumerate(MODELS, start=1)
                     },
                 }
