@@ -7,3 +7,6 @@ __pycache__/
 *.py[cod]
 .venv/
 tests/
+!tests/
+tests/*
+!tests/test_landing.py
