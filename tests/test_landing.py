@@ -1,6 +1,6 @@
 """Landing response and selected-row normalization regression coverage."""
 
-import json
+import logging
 import re
 import sqlite3
 from contextlib import contextmanager
@@ -17,7 +17,7 @@ from services.landing import claims_service as service
 def sql_source():
     """Exercise the normalization CTE locally using equivalent SQL functions.
 
-    SQL Server's APPLY/FOR JSON portion still requires a live integration check.
+    SQL Server execution and performance still require a live integration check.
     """
     connection = sqlite3.connect(":memory:")
     connection.create_function("LEN", 1, lambda s: len(s) if s is not None else None)
@@ -46,13 +46,13 @@ def sql_source():
         for model, rows in rows_by_model.items():
             table = tables[service.MODELS.index(model)][0]
             connection.executemany(f"INSERT INTO [{table}] VALUES (?, ?, ?, ?, ?)", rows)
-        query = service.NORMALIZED_ROWS_CTE.replace("[dbo].", "")
+        query = service.LANDING_QUERY.replace("[dbo].", "")
         query = re.sub(r"nvarchar\((?:max|450)\)", "TEXT", query)
         query = re.sub(r"\bN'", "'", query)
         query = query.replace("action_text + ' — ' + details_text",
                               "action_text || ' — ' || details_text")
         return connection.execute(
-            query + " SELECT model, claim_number, Predictions, Action FROM normalized_rows",
+            query,
             [1, 1, 1, 1],
         ).fetchall()
 
@@ -113,8 +113,10 @@ def mock_connection(monkeypatch, sql_rows):
     class Cursor:
         def execute(self, query, params):
             assert params == [1, 1, 1, 1]
-            assert query.count("OUTER APPLY") == 4
-            assert query.count("FOR JSON PATH, INCLUDE_NULL_VALUES") == 4
+            assert query == service.LANDING_QUERY
+            assert query.count("UNION ALL") == 3
+            assert "OUTER APPLY" not in query
+            assert "FOR JSON" not in query
 
         def fetchall(self):
             return sql_rows
@@ -139,8 +141,9 @@ def test_api_preserves_arrays_nulls_duplicates_and_json_escaping(
         {"Predictions": "Low", "Action": None},
     ]
     mock_connection(monkeypatch, [
-        ("85-00837106", "[]", json.dumps(recommendations), "[]", "[]"),
-        ("85-00937608", '[{"Predictions":null,"Action":null}]', "[]", "[]", "[]"),
+        *(('litigation', '85-00837106', r['Predictions'], r['Action'])
+          for r in recommendations),
+        ("fraud", "85-00937608", None, None),
     ])
     response = authenticated_client.get("/landing/")
     assert response.status_code == 200
@@ -160,15 +163,11 @@ def test_api_returns_empty_list(monkeypatch, authenticated_client):
 
 
 @pytest.mark.parametrize("present_model", service.MODELS)
-def test_api_sql_null_arrays_are_empty_but_null_fields_are_preserved(
+def test_api_missing_models_are_empty_but_null_fields_are_preserved(
     monkeypatch, authenticated_client, present_model
 ):
     records = [{"Predictions": None, "Action": None}]
-    columns = [
-        json.dumps(records) if model == present_model else None
-        for model in service.MODELS
-    ]
-    mock_connection(monkeypatch, [("85-00837106", *columns)])
+    mock_connection(monkeypatch, [(present_model, "85-00837106", None, None)])
 
     response = authenticated_client.get("/landing/")
 
@@ -179,13 +178,65 @@ def test_api_sql_null_arrays_are_empty_but_null_fields_are_preserved(
     }]
 
 
-def test_api_malformed_json_is_not_silently_replaced_with_empty_array(
+def test_api_invalid_prediction_is_not_silently_dropped(
     monkeypatch, authenticated_client
 ):
-    mock_connection(monkeypatch, [("85-00837106", "broken-json", None, None, None)])
+    mock_connection(monkeypatch, [("fraud", "85-00837106", "invalid", None)])
     response = authenticated_client.get("/landing/")
     assert response.status_code == 500
     assert response.json() == {"detail": {"error": "Database operation failed"}}
+
+
+def test_grouping_keeps_model_records_separate_and_preserves_duplicates(sql_source):
+    rows = sql_source({
+        "fraud": [("85-00837106", "1: High", "Status", "Feedback", 1)],
+        "litigation": [
+            ("85-00837106-01", "1 : High", "Action A", "Details A", 1),
+            ("85-00837106-02", "0 : Low", "Action B", None, 1),
+            ("85-00837106-02", "0 : Low", "Action B", None, 1),
+        ],
+        "severity": [
+            ("85-00837106", "1: High", "Settle", None, 1),
+            ("85-00837106", "0: Low", None, None, 1),
+        ],
+        "subrogation": [
+            ("85-00837106", "1: High", "Assigned", None, 1),
+            ("85-00999999", "0: Low", None, None, 1),
+        ],
+    })
+    actual = [claim.model_dump() for claim in service.group_landing_rows(rows)]
+    assert actual == [
+        {
+            "claim_number": "85-00837106",
+            "fraud": [{"Predictions": "High", "Action": "Status — Feedback"}],
+            "litigation": [
+                {"Predictions": "High", "Action": "Action A — Details A"},
+                {"Predictions": "Low", "Action": "Action B"},
+                {"Predictions": "Low", "Action": "Action B"},
+            ],
+            "severity": [
+                {"Predictions": "High", "Action": "Settle"},
+                {"Predictions": "Low", "Action": None},
+            ],
+            "subrogation": [{"Predictions": "High", "Action": "Assigned"}],
+        },
+        {
+            "claim_number": "85-00999999",
+            "fraud": [], "litigation": [], "severity": [],
+            "subrogation": [{"Predictions": "Low", "Action": None}],
+        },
+    ]
+
+
+def test_service_logs_phase_timings(monkeypatch, caplog):
+    mock_connection(monkeypatch, [("fraud", "85-00837106", "High", None)])
+    ticks = iter([0, 1, 3, 6, 7, 9])
+    monkeypatch.setattr(service, "perf_counter", lambda: next(ticks))
+    with caplog.at_level(logging.WARNING, logger=service.__name__):
+        service.fetch_landing_claims()
+    assert "connection=1.000s execute=2.000s fetch=3.000s" in caplog.text
+    assert "close=1.000s grouping_validation=2.000s total=9.000s" in caplog.text
+    assert "rows=1 claims=1" in caplog.text
 
 
 def test_api_requires_authentication():

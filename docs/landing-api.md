@@ -44,13 +44,19 @@ joined with ` — `; a single component is returned alone, and two empty compone
 produce null. Blank strings and textual `NULL` are treated as empty action values.
 
 The SQL in `services/landing/claims_service.py` reads all four selector tables in
-one parameterized statement. CTEs normalize the rows, and per-model `OUTER APPLY`
-expressions with `FOR JSON PATH, INCLUDE_NULL_VALUES` collect the matching rows
-without multiplying features across models. No intermediate tables or database
-schema changes are required. The service parses the SQL JSON arrays and validates
-the response; blocking database work runs in FastAPI's thread pool.
+one parameterized `UNION ALL` statement. CTEs normalize the rows and are referenced
+once to fetch a flat result, ordered by claim number, model, prediction, and action.
+Python groups the rows by claim and model in one pass, preserving every source row.
+This avoids running four correlated SQL JSON subqueries per claim. No intermediate
+tables or database schema changes are required. Database access, grouping, and
+response validation run in FastAPI's thread pool.
+
+The service logs connection, execute, fetch, connection-close, grouping/validation,
+and total service times, plus row and claim counts. Timings are logged at INFO for
+normal requests and WARNING when total service time reaches five seconds. Execute
+and fetch timings both may include SQL execution work. Total service time excludes
+HTTP response serialization, compression, network transfer, and browser rendering.
 
 The local regression tests exercise the normalization CTE with equivalent SQLite
-functions and verify the HTTP contract with mocked SQL JSON results. The SQL Server
-`OUTER APPLY` / `FOR JSON` execution and performance require a configured live
-database to verify.
+functions and verify grouping and the HTTP contract with flat SQL results. SQL
+Server execution and performance require a configured live database to verify.

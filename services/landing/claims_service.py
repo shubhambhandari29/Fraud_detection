@@ -1,7 +1,9 @@
 """Read live selector data without persisting an intermediate table."""
 
-import json
 import logging
+from collections.abc import Iterable, Sequence
+from time import perf_counter
+from typing import Any
 
 from fastapi import HTTPException
 from fastapi.concurrency import run_in_threadpool
@@ -13,8 +15,8 @@ from db import db_connection
 logger = logging.getLogger(__name__)
 MODELS = ("fraud", "litigation", "severity", "subrogation")
 
-# UNION ALL retains every source record. Only the list of claim numbers is
-# deduplicated below; predictions/actions are never deduplicated or aggregated.
+# UNION ALL retains every source record. Python groups these rows by claim;
+# predictions/actions are never deduplicated or aggregated.
 NORMALIZED_ROWS_CTE = """
 WITH source_rows AS (
     SELECT N'fraud' AS model,
@@ -79,52 +81,59 @@ WITH source_rows AS (
 )
 """
 
-# Each APPLY returns one JSON array per claim/model, preventing a feature-row
-# Cartesian product. INCLUDE_NULL_VALUES distinguishes an empty field from [].
-# Returning ordinary SQL rows with JSON columns also avoids the chunking of a
-# single large top-level FOR JSON result through ODBC.
+# Reference the normalized rows once, with one global sort. This replaces the
+# four correlated JSON subqueries per claim and preserves SQL's ordering rules.
 LANDING_QUERY = NORMALIZED_ROWS_CTE + """
-, claims AS (
-    SELECT claim_number FROM normalized_rows GROUP BY claim_number
-)
-SELECT claims.claim_number,
-       COALESCE(fraud.records, N'[]') AS fraud,
-       COALESCE(litigation.records, N'[]') AS litigation,
-       COALESCE(severity.records, N'[]') AS severity,
-       COALESCE(subrogation.records, N'[]') AS subrogation
-FROM claims
-""" + "\n".join(
-    f"""OUTER APPLY (
-    SELECT (
-        SELECT r.[Predictions], r.[Action]
-        FROM normalized_rows AS r
-        WHERE r.claim_number = claims.claim_number AND r.model = N'{model}'
-        ORDER BY r.[Predictions], r.[Action]
-        FOR JSON PATH, INCLUDE_NULL_VALUES
-    ) AS records
-) AS {model}"""
-    for model in MODELS
-) + "\nORDER BY claims.claim_number;"
+SELECT model, claim_number, [Predictions], [Action]
+FROM normalized_rows
+ORDER BY claim_number, model, [Predictions], [Action];
+"""
+
+
+def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
+    """Collect rows in one pass, preserving duplicates and prediction/action pairs."""
+    claims: dict[str, dict[str, Any]] = {}
+    for model, claim_number, prediction, action in rows:
+        if model not in MODELS:
+            raise ValueError(f"Unexpected landing model: {model}")
+        if claim_number not in claims:
+            claims[claim_number] = {
+                "claim_number": claim_number,
+                **{name: [] for name in MODELS},
+            }
+        claims[claim_number][model].append({"Predictions": prediction, "Action": action})
+
+    return [LandingClaim.model_validate(claim) for claim in claims.values()]
 
 
 def fetch_landing_claims() -> list[LandingClaim]:
+    started = perf_counter()
     with db_connection() as connection:
+        connected = perf_counter()
         cursor = connection.cursor()
         cursor.execute(LANDING_QUERY, [1, 1, 1, 1])
-        return [
-            LandingClaim.model_validate(
-                {
-                    "claim_number": row[0],
-                    **{
-                        # A SQL NULL array means no model records; null fields
-                        # inside an existing JSON record must remain intact.
-                        model: [] if row[index] is None else json.loads(row[index])
-                        for index, model in enumerate(MODELS, start=1)
-                    },
-                }
-            )
-            for row in cursor.fetchall()
-        ]
+        executed = perf_counter()
+        rows = cursor.fetchall()
+        fetched = perf_counter()
+
+    closed = perf_counter()
+    claims = group_landing_rows(rows)
+    finished = perf_counter()
+    # Slow requests remain visible even when the application logs only warnings.
+    log = logger.warning if finished - started >= 5 else logger.info
+    log(
+        "Landing claims timings: connection=%.3fs execute=%.3fs fetch=%.3fs "
+        "close=%.3fs grouping_validation=%.3fs total=%.3fs rows=%d claims=%d",
+        connected - started,
+        executed - connected,
+        fetched - executed,
+        closed - fetched,
+        finished - closed,
+        finished - started,
+        len(rows),
+        len(claims),
+    )
+    return claims
 
 
 async def get_claims() -> list[LandingClaim]:
