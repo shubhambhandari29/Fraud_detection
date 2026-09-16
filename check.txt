@@ -1,5 +1,24 @@
-Addressed: "False",
-    Selected: "1",
-    Status: "<>Monitor",
-    REFERRAL_MECHANISM: "<>'No Referral'",
-    Sort_Order: "ML_SCORE: Descending, SIU_G_SCORE: Descending, WATCHLIST_SCORE: Descending, IES: Descending, low_apd_pay: Descending"
+Failed to fetch landing-page claims
+Traceback (most recent call last):
+  File "C:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\services\landing\claims_service.py", line 130, in get_claims
+    return await run_in_threadpool(fetch_landing_claims)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\starlette\concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\anyio\to_thread.py", line 61, in run_sync    
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\anyio\_backends\_asyncio.py", line 2525, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\services\landing\claims_service.py", line 119, in fetch_landing_claims
+    model: json.loads(row[index])
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+INFO:     127.0.0.1:63026 - "GET /landing/ HTTP/1.1" 500 Internal Server Error
