@@ -1,1 +1,4 @@
-Landing claims timings: connection=23.140s execute=0.201s fetch=0.126s close=0.086s grouping_validation=0.154s total=23.707s rows=11329 claims=8198
+"severity": [
+  {"Predictions": "High", "Action": null},
+  {"Predictions": "High", "Action": "Settle"}
+]
