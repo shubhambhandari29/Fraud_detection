@@ -59,10 +59,15 @@ WITH source_rows AS (
     FROM source_rows
 ), cleaned_rows AS (
     SELECT model,
-           CASE WHEN model = N'litigation' AND raw_claim_number LIKE N'%-%-%'
+           CASE WHEN model = N'litigation'
+                     AND CHARINDEX(N'-', REVERSE(raw_claim_number)) = 3
                 THEN SUBSTRING(raw_claim_number, 1,
                      LEN(raw_claim_number) - CHARINDEX(N'-', REVERSE(raw_claim_number)))
                 ELSE raw_claim_number END AS claim_number,
+           CASE WHEN model = N'litigation'
+                     AND CHARINDEX(N'-', REVERSE(raw_claim_number)) = 3
+                THEN SUBSTRING(raw_claim_number, LEN(raw_claim_number) - 1, 2)
+                ELSE NULL END AS feature_number,
            LTRIM(RTRIM(SUBSTRING(raw_prediction,
                  CHARINDEX(N':', raw_prediction) + 1,
                  LEN(raw_prediction)))) AS prediction_label,
@@ -70,7 +75,7 @@ WITH source_rows AS (
            CASE WHEN LOWER(raw_details) = N'null' THEN NULL ELSE raw_details END AS details_text
     FROM trimmed_rows
 ), normalized_rows AS (
-    SELECT model, claim_number,
+    SELECT model, claim_number, feature_number,
            CASE prediction_label WHEN N'high' THEN N'High'
                                  WHEN N'low' THEN N'Low'
                                  ELSE NULL END AS [Predictions],
@@ -84,16 +89,16 @@ WITH source_rows AS (
 # Reference the normalized rows once, with one global sort. This replaces the
 # four correlated JSON subqueries per claim and preserves SQL's ordering rules.
 LANDING_QUERY = NORMALIZED_ROWS_CTE + """
-SELECT model, claim_number, [Predictions], [Action]
+SELECT model, claim_number, feature_number, [Predictions], [Action]
 FROM normalized_rows
-ORDER BY claim_number, model, [Predictions], [Action];
+ORDER BY claim_number, model, feature_number, [Predictions], [Action];
 """
 
 
 def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
     """Collect rows in one pass, preserving duplicates and prediction/action pairs."""
     claims: dict[str, dict[str, Any]] = {}
-    for model, claim_number, prediction, action in rows:
+    for model, claim_number, feature, prediction, action in rows:
         if model not in MODELS:
             raise ValueError(f"Unexpected landing model: {model}")
         if claim_number not in claims:
@@ -101,7 +106,12 @@ def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
                 "claim_number": claim_number,
                 **{name: [] for name in MODELS},
             }
-        claims[claim_number][model].append({"Predictions": prediction, "Action": action})
+        recommendation = {"Predictions": prediction, "Action": action}
+        if model == "litigation":
+            if feature is None:
+                raise ValueError("Litigation landing row is missing its feature")
+            recommendation["Feature"] = feature
+        claims[claim_number][model].append(recommendation)
 
     return [LandingClaim.model_validate(claim) for claim in claims.values()]
 

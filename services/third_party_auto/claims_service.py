@@ -61,6 +61,24 @@ async def get_claims(
         ) from error
 
 
+async def get_claim_by_number(claim_number: str) -> list[dict[str, Any]]:
+    """Return every Third Party Auto row for one claim number."""
+    try:
+        records = await fetch_records_async(
+            TABLE_NAME,
+            filters={CLAIM_NUMBER_COLUMN: claim_number},
+            validate_filters=True,
+        )
+        return serialize_record_dates(records)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail={"error": str(error)}) from error
+    except Exception as error:
+        logger.exception("Failed to fetch claim %s", claim_number)
+        raise HTTPException(
+            status_code=500, detail={"error": "Database operation failed"}
+        ) from error
+
+
 async def upsert_claims(
     records: list[dict[str, Any]],
     user_id: str,

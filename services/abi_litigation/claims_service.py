@@ -16,6 +16,7 @@ from core.db_helpers import (
 logger = logging.getLogger(__name__)
 TABLE_NAME = "dbo.tblALLitigation_OpenClaimsPredictions_Selector"
 PRIMARY_KEY = "ID"
+CLAIM_NUMBER_COLUMN = "DERIVE_CLM_FTR_NBR"
 
 
 async def get_claims(
@@ -36,6 +37,24 @@ async def get_claims(
         raise HTTPException(status_code=400, detail={"error": str(error)}) from error
     except Exception as error:
         logger.exception("Failed to fetch ABI Litigation claims")
+        raise HTTPException(
+            status_code=500, detail={"error": "Database operation failed"}
+        ) from error
+
+
+async def get_claim_by_number(claim_number: str) -> list[dict[str, Any]]:
+    """Return rows matching one complete Litigation claim-feature number."""
+    try:
+        records = await fetch_records_async(
+            TABLE_NAME,
+            filters={CLAIM_NUMBER_COLUMN: claim_number},
+            validate_filters=True,
+        )
+        return serialize_record_dates(records)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail={"error": str(error)}) from error
+    except Exception as error:
+        logger.exception("Failed to fetch ABI Litigation claim %s", claim_number)
         raise HTTPException(
             status_code=500, detail={"error": "Database operation failed"}
         ) from error

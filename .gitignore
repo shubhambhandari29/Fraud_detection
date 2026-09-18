@@ -10,3 +10,4 @@ tests/
 !tests/
 tests/*
 !tests/test_landing.py
+!tests/test_claim_get.py

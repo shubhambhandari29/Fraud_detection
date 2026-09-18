@@ -10,9 +10,13 @@ class ModelRecommendation(BaseModel):
     Action: str | None
 
 
+class LitigationRecommendation(ModelRecommendation):
+    Feature: str
+
+
 class LandingClaim(BaseModel):
     claim_number: str
     fraud: list[ModelRecommendation]
-    litigation: list[ModelRecommendation]
+    litigation: list[LitigationRecommendation]
     severity: list[ModelRecommendation]
     subrogation: list[ModelRecommendation]

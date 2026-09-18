@@ -11,8 +11,8 @@ addressed claims remain included. Results are ordered by claim number.
     "claim_number": "85-00837106",
     "fraud": [{"Predictions": "High", "Action": "Status — Feedback"}],
     "litigation": [
-      {"Predictions": "High", "Action": "Action A — Details A"},
-      {"Predictions": "Low", "Action": null}
+      {"Feature": "01", "Predictions": "High", "Action": "Action A — Details A"},
+      {"Feature": "02", "Predictions": "Low", "Action": null}
     ],
     "severity": [],
     "subrogation": [{"Predictions": "High", "Action": "Assigned"}]
@@ -21,8 +21,9 @@ addressed claims remain included. Results are ordered by claim number.
 ```
 
 Each model array preserves every selected source row, including identical entries.
-Predictions and actions from the same source row stay in the same object. No IDs or
-feature numbers appear in the response. An empty array means no selected record
+Predictions and actions from the same source row stay in the same object. Litigation
+entries also contain the two-character `Feature` suffix from
+`DERIVE_CLM_FTR_NBR`; no database IDs appear. An empty array means no selected record
 exists for that model; a null field means a record exists but that field is empty.
 If there are no selected records anywhere, the endpoint returns `[]`.
 
@@ -33,9 +34,10 @@ If there are no selected records anywhere, the endpoint returns `[]`.
 | severity | CLM_NBR | PREDICTIONS | Action, ACTION_DETAILS |
 | subrogation | CLM_NBR_U | PREDICTIONS | Status |
 
-Litigation's final feature suffix is removed: `85-00837106-02` becomes
-`85-00837106`. Already normalized claim numbers are retained. Claim numbers are
-trimmed and kept as strings to preserve leading zeros.
+Litigation's final two-character feature suffix is split before grouping:
+`85-00837106-02` becomes claim number `85-00837106` and feature `02`. Already
+normalized claim numbers are retained. Claim and feature values remain strings to
+preserve leading zeros.
 
 Prediction labels after the colon are trimmed and matched case-insensitively:
 `1: High` and `1 : High` both become `High`; Low variants become `Low`.

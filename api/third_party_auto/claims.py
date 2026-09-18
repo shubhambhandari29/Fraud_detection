@@ -9,6 +9,9 @@ from core.models.auth import LoginResponse
 from core.models.third_party_auto import ClaimTransferRequest
 from services.auth_service import get_current_user_from_token
 from services.third_party_auto.claims_service import get_claims as get_claims_service
+from services.third_party_auto.claims_service import (
+    get_claim_by_number as get_claim_by_number_service,
+)
 from services.third_party_auto.claims_service import transfer_claims as transfer_claims_service
 from services.third_party_auto.claims_service import upsert_claims as upsert_claims_service
 
@@ -21,6 +24,11 @@ async def get_claims(
     request: Request,
 ) -> list[dict[str, Any]]:
     return await get_claims_service(dict(request.query_params))
+
+
+@router.get("/get/{claim_number}")
+async def get_claim_by_number(claim_number: str) -> list[dict[str, Any]]:
+    return await get_claim_by_number_service(claim_number)
 
 
 @router.post("/upsert", response_model=WriteResult)

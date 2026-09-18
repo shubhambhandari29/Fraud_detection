@@ -79,24 +79,32 @@ def test_sql_preserves_duplicates_and_normalizes_all_four_models(sql_source):
     })
     assert len(rows) == 7
     assert {row[1] for row in rows} == {"85-00837106"}
-    assert rows.count(("litigation", "85-00837106", "Low", "Action B")) == 2
-    assert ("fraud", "85-00837106", "High", "Status — Feedback") in rows
-    assert ("litigation", "85-00837106", "High", "Action A — Details A") in rows
-    assert ("severity", "85-00837106", "Low", "Medical Report") in rows
-    assert ("subrogation", "85-00837106", "High", "Assigned") in rows
+    assert rows.count(("litigation", "85-00837106", "02", "Low", "Action B")) == 2
+    assert ("fraud", "85-00837106", None, "High", "Status — Feedback") in rows
+    assert (
+        "litigation", "85-00837106", "01", "High", "Action A — Details A"
+    ) in rows
+    assert ("severity", "85-00837106", None, "Low", "Medical Report") in rows
+    assert ("subrogation", "85-00837106", None, "High", "Assigned") in rows
 
 
 @pytest.mark.parametrize("prediction", [None, "", "NULL", "unexpected"])
 def test_sql_missing_predictions_actions_and_whitespace(sql_source, prediction):
     assert sql_source({"litigation": [
         (" 85-00837106-01 ", prediction, " ", "NULL", 1)
-    ]}) == [("litigation", "85-00837106", None, None)]
+    ]}) == [("litigation", "85-00837106", "01", None, None)]
 
 
 def test_sql_keeps_claim_number_without_feature_suffix(sql_source):
     assert sql_source({"litigation": [
         ("85-00837106", "  high  ", None, " Detail only ", 1)
-    ]}) == [("litigation", "85-00837106", "High", "Detail only")]
+    ]}) == [("litigation", "85-00837106", None, "High", "Detail only")]
+
+
+def test_sql_splits_short_litigation_claim_and_feature_example(sql_source):
+    assert sql_source({"litigation": [
+        ("8754323-02", "1: High", "Review", None, 1)
+    ]}) == [("litigation", "8754323", "02", "High", "Review")]
 
 
 @pytest.fixture
@@ -136,14 +144,18 @@ def test_api_preserves_arrays_nulls_duplicates_and_json_escaping(
     monkeypatch, authenticated_client
 ):
     recommendations = [
-        {"Predictions": "High", "Action": 'Review "medical"\nreport — café'},
-        {"Predictions": "Low", "Action": None},
-        {"Predictions": "Low", "Action": None},
+        {
+            "Feature": "01",
+            "Predictions": "High",
+            "Action": 'Review "medical"\nreport — café',
+        },
+        {"Feature": "02", "Predictions": "Low", "Action": None},
+        {"Feature": "02", "Predictions": "Low", "Action": None},
     ]
     mock_connection(monkeypatch, [
-        *(('litigation', '85-00837106', r['Predictions'], r['Action'])
+        *(('litigation', '85-00837106', r['Feature'], r['Predictions'], r['Action'])
           for r in recommendations),
-        ("fraud", "85-00937608", None, None),
+        ("fraud", "85-00937608", None, None, None),
     ])
     response = authenticated_client.get("/landing/")
     assert response.status_code == 200
@@ -167,7 +179,12 @@ def test_api_missing_models_are_empty_but_null_fields_are_preserved(
     monkeypatch, authenticated_client, present_model
 ):
     records = [{"Predictions": None, "Action": None}]
-    mock_connection(monkeypatch, [(present_model, "85-00837106", None, None)])
+    feature = "01" if present_model == "litigation" else None
+    if feature:
+        records[0]["Feature"] = feature
+    mock_connection(
+        monkeypatch, [(present_model, "85-00837106", feature, None, None)]
+    )
 
     response = authenticated_client.get("/landing/")
 
@@ -181,7 +198,9 @@ def test_api_missing_models_are_empty_but_null_fields_are_preserved(
 def test_api_invalid_prediction_is_not_silently_dropped(
     monkeypatch, authenticated_client
 ):
-    mock_connection(monkeypatch, [("fraud", "85-00837106", "invalid", None)])
+    mock_connection(
+        monkeypatch, [("fraud", "85-00837106", None, "invalid", None)]
+    )
     response = authenticated_client.get("/landing/")
     assert response.status_code == 500
     assert response.json() == {"detail": {"error": "Database operation failed"}}
@@ -210,9 +229,13 @@ def test_grouping_keeps_model_records_separate_and_preserves_duplicates(sql_sour
             "claim_number": "85-00837106",
             "fraud": [{"Predictions": "High", "Action": "Status — Feedback"}],
             "litigation": [
-                {"Predictions": "High", "Action": "Action A — Details A"},
-                {"Predictions": "Low", "Action": "Action B"},
-                {"Predictions": "Low", "Action": "Action B"},
+                {
+                    "Feature": "01",
+                    "Predictions": "High",
+                    "Action": "Action A — Details A",
+                },
+                {"Feature": "02", "Predictions": "Low", "Action": "Action B"},
+                {"Feature": "02", "Predictions": "Low", "Action": "Action B"},
             ],
             "severity": [
                 {"Predictions": "High", "Action": "Settle"},
@@ -229,7 +252,7 @@ def test_grouping_keeps_model_records_separate_and_preserves_duplicates(sql_sour
 
 
 def test_service_logs_phase_timings(monkeypatch, caplog):
-    mock_connection(monkeypatch, [("fraud", "85-00837106", "High", None)])
+    mock_connection(monkeypatch, [("fraud", "85-00837106", None, "High", None)])
     ticks = iter([0, 1, 3, 6, 7, 9])
     monkeypatch.setattr(service, "perf_counter", lambda: next(ticks))
     with caplog.at_level(logging.WARNING, logger=service.__name__):

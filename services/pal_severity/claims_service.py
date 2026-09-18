@@ -26,6 +26,7 @@ from db import db_connection
 logger = logging.getLogger(__name__)
 TABLE_NAME = "dbo.tblPALSeverity_OpenClaimsPredictions_Selector_GAME"
 PRIMARY_KEY = "ID"
+CLAIM_NUMBER_COLUMN = "CLM_NBR"
 FASTBREAK_TABLE_NAME = "dbo.tblSeverity_Fastbreak_Referral"
 FASTBREAK_PRIMARY_KEY = "DERIVE_CLM_FTR_NBR"
 FASTBREAK_SOURCE_COLUMNS = (
@@ -62,6 +63,24 @@ async def get_claims(
         raise HTTPException(status_code=400, detail={"error": str(error)}) from error
     except Exception as error:
         logger.exception("Failed to fetch PAL Severity claims")
+        raise HTTPException(
+            status_code=500, detail={"error": "Database operation failed"}
+        ) from error
+
+
+async def get_claim_by_number(claim_number: str) -> list[dict[str, Any]]:
+    """Return every PAL Severity feature row for one claim number."""
+    try:
+        records = await fetch_records_async(
+            TABLE_NAME,
+            filters={CLAIM_NUMBER_COLUMN: claim_number},
+            validate_filters=True,
+        )
+        return serialize_record_dates(records)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail={"error": str(error)}) from error
+    except Exception as error:
+        logger.exception("Failed to fetch PAL Severity claim %s", claim_number)
         raise HTTPException(
             status_code=500, detail={"error": "Database operation failed"}
         ) from error
