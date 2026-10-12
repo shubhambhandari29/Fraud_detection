@@ -29,6 +29,16 @@ AUTHENTICATION = "ActiveDirectoryInteractive"
 BATCH_SIZE = 1_000
 CONNECTION_TIMEOUT_SECONDS = 30
 
+# These six columns are copied. The last three are added to PREPROD when absent.
+COPY_COLUMN_NAMES = (
+    "clm_nbr",
+    "topic",
+    "value",
+    "template",
+    "Date_Generated",
+    "Word_Length",
+)
+
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_ $-]*$")
 
 
@@ -191,6 +201,21 @@ def add_missing_columns(
     return added
 
 
+def select_copy_columns(
+    prod_columns: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Resolve the exact six copy columns using PROD's spelling and metadata."""
+    prod_by_name = {
+        str(column["column_name"]).strip().casefold(): column for column in prod_columns
+    }
+    missing_from_prod = [name for name in COPY_COLUMN_NAMES if name.casefold() not in prod_by_name]
+    if missing_from_prod:
+        raise RuntimeError(
+            "Required copy column(s) missing from PROD: " + ", ".join(missing_from_prod)
+        )
+    return [prod_by_name[name.casefold()] for name in COPY_COLUMN_NAMES]
+
+
 def row_count(cursor: pyodbc.Cursor, qualified_table: str) -> int:
     cursor.execute(f"SELECT COUNT_BIG(*) FROM {qualified_table}")
     return int(cursor.fetchone()[0])
@@ -266,13 +291,23 @@ def main() -> None:
         if not table_exists(preprod_cursor, schema, table):
             raise RuntimeError(f"Target table {schema}.{table} does not exist in PREPROD")
 
-        prod_columns = fetch_columns(prod_cursor, schema, table)
+        prod_columns = select_copy_columns(fetch_columns(prod_cursor, schema, table))
         preprod_columns = fetch_columns(preprod_cursor, schema, table)
         expected_rows = row_count(prod_cursor, qualified)
         existing_rows = row_count(preprod_cursor, qualified)
         print(f"PROD rows:    {expected_rows:,}")
         print(f"PREPROD rows: {existing_rows:,}")
         print("Existing PREPROD columns will remain unchanged.")
+        preprod_names = {
+            str(column["column_name"]).strip().casefold() for column in preprod_columns
+        }
+        missing_columns = [
+            str(column["column_name"])
+            for column in prod_columns
+            if str(column["column_name"]).strip().casefold() not in preprod_names
+        ]
+        print("Columns to add: " + (", ".join(missing_columns) if missing_columns else "none"))
+        print("Columns to copy: " + ", ".join(COPY_COLUMN_NAMES))
 
         expected_confirmation = f"SYNC {schema}.{table}"
         confirmation = input(f"Type '{expected_confirmation}' exactly to continue: ").strip()
