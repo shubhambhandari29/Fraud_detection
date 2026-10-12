@@ -288,10 +288,36 @@ def generated_constraint_name(prefix: str, table: str, ordinal: int) -> str:
     return raw[:128]
 
 
-def create_table_sql(schema: str, table: str, columns: list[dict[str, Any]]) -> str:
+def create_target_table(
+    cursor: pyodbc.Cursor,
+    schema: str,
+    table: str,
+    columns: list[dict[str, Any]],
+) -> None:
+    """Create an empty target and add columns one at a time.
+
+    Individual ALTER statements avoid ambiguous errors from one large CREATE
+    TABLE statement and identify the precise source column if SQL Server
+    rejects a type or attribute.
+    """
     qualified = f"{quote_identifier(schema)}.{quote_identifier(table)}"
-    definitions = ",\n    ".join(column_definition(column) for column in columns)
-    return f"CREATE TABLE {qualified} (\n    {definitions}\n)"
+    source_names = {str(column["column_name"]).casefold() for column in columns}
+    placeholder = "__prod_copy_placeholder__"
+    while placeholder.casefold() in source_names:
+        placeholder += "_"
+
+    quoted_placeholder = quote_identifier(placeholder)
+    cursor.execute(f"CREATE TABLE {qualified} ({quoted_placeholder} bit NULL)")
+    for column in columns:
+        definition = column_definition(column)
+        statement = f"ALTER TABLE {qualified} ADD {definition}"
+        try:
+            cursor.execute(statement)
+        except pyodbc.Error as error:
+            raise RuntimeError(
+                f"Failed to create column {column['column_name']!r}. " f"Generated SQL: {statement}"
+            ) from error
+    cursor.execute(f"ALTER TABLE {qualified} DROP COLUMN {quoted_placeholder}")
 
 
 def create_constraints_and_indexes(
@@ -446,7 +472,7 @@ def main() -> None:
         try:
             if target_exists:
                 preprod_cursor.execute(f"DROP TABLE {qualified}")
-            preprod_cursor.execute(create_table_sql(schema, table, columns))
+            create_target_table(preprod_cursor, schema, table, columns)
             copied_rows = copy_rows(prod_cursor, preprod_cursor, qualified, columns)
             create_constraints_and_indexes(
                 preprod_cursor,
