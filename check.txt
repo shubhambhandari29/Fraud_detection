@@ -1,8 +1,7 @@
-WARNING: The PREPROD target already exists and will be dropped and recreated.
-Type 'REPLACE dbo.tblFraudThirdPartyAutoBI_GAME' exactly to continue: REPLACE dbo.tblFraudThirdPartyAutoBI_GAME
-Traceback (most recent call last):
-  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 484, in <module>
+  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 510, in <module>
     main()
-  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 449, in main
-    preprod_cursor.execute(create_table_sql(schema, table, columns))
-pyodbc.ProgrammingError: ('42000', "[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Incorrect syntax near ','. (102) (SQLExecDirectW)")
+  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 475, in main
+    create_target_table(preprod_cursor, schema, table, columns)
+  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 317, in create_target_table
+    raise RuntimeError(
+RuntimeError: Failed to create column 'clm_nbr'. Generated SQL: ALTER TABLE [dbo].[tblFraudThirdPartyAutoBI_GAME] ADD [clm_nbr] [nvarchar](MAX) COLLATE SQL_Latin1_General_CP1_CI_AS IDENTITY(,) NULL
