@@ -14,11 +14,7 @@ def _parse_origins(value: str | None) -> list[str]:
     if not value:
         return []
     return list(
-        dict.fromkeys(
-            origin.strip().rstrip("/")
-            for origin in value.split(",")
-            if origin.strip()
-        )
+        dict.fromkeys(origin.strip().rstrip("/") for origin in value.split(",") if origin.strip())
     )
 
 
@@ -27,6 +23,9 @@ class Settings:
 
     DB_SERVER: str | None = os.getenv("DB_SERVER")
     DB_NAME: str = os.getenv("DB_NAME", "CLMDS_DataModelingAndTextMining")
+    DATATEXT_DB_NAME: str = os.getenv("DATATEXT_DB_NAME", DB_NAME)
+    FRAUD_DB_NAME: str = os.getenv("FRAUD_DB_NAME", "CLMAA_FraudModel")
+    VENDOR_DB_NAME: str = os.getenv("VENDOR_DB_NAME", "CLM_VendorData")
     DB_DRIVER: str = os.getenv("DB_DRIVER", "{ODBC Driver 18 for SQL Server}")
     DB_AUTH: str | None = os.getenv("DB_AUTH")
     DB_CONNECTION_TIMEOUT: int = int(os.getenv("DB_CONNECTION_TIMEOUT", "15"))

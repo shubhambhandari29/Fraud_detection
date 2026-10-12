@@ -17,15 +17,16 @@ def _required_setting(name: str, value: str | None) -> str:
     return value
 
 
-def _build_connection_string() -> str:
+def _build_connection_string(database_name: str | None = None) -> str:
     """Build the encrypted SQL Server ODBC connection string."""
     server = _required_setting("DB_SERVER", settings.DB_SERVER)
     authentication = _required_setting("DB_AUTH", settings.DB_AUTH)
+    database = _required_setting("DB_NAME", database_name or settings.DB_NAME)
 
     return (
         f"Driver={settings.DB_DRIVER};"
         f"Server={server};"
-        f"Database={settings.DB_NAME};"
+        f"Database={database};"
         f"Authentication={authentication};"
         "Encrypt=yes;"
         "TrustServerCertificate=no;"
@@ -44,13 +45,13 @@ def _handle_datetimeoffset(
 
     try:
         if len(dto_value) == 20:
-            year, month, day, hour, minute, second, fraction, tz_hour, tz_minute = (
-                struct.unpack("<6hI2h", dto_value)
+            year, month, day, hour, minute, second, fraction, tz_hour, tz_minute = struct.unpack(
+                "<6hI2h", dto_value
             )
             tzinfo = timezone(timedelta(hours=tz_hour, minutes=tz_minute))
         else:
-            year, month, day, hour, minute, second, fraction, offset_minutes = (
-                struct.unpack("<6hIh", dto_value)
+            year, month, day, hour, minute, second, fraction, offset_minutes = struct.unpack(
+                "<6hIh", dto_value
             )
             tzinfo = timezone(timedelta(minutes=offset_minutes))
     except struct.error:
@@ -68,10 +69,10 @@ def _handle_datetimeoffset(
     )
 
 
-def get_raw_connection() -> pyodbc.Connection:
+def get_raw_connection(database_name: str | None = None) -> pyodbc.Connection:
     """Open and return a new SQL Server connection."""
     connection = pyodbc.connect(
-        _build_connection_string(),
+        _build_connection_string(database_name),
         timeout=settings.DB_CONNECTION_TIMEOUT,
     )
     datetimeoffset_type = getattr(pyodbc, "SQL_SS_TIMESTAMPOFFSET", -155)
@@ -84,9 +85,9 @@ def get_raw_connection() -> pyodbc.Connection:
 
 
 @contextmanager
-def db_connection() -> Iterator[pyodbc.Connection]:
+def db_connection(database_name: str | None = None) -> Iterator[pyodbc.Connection]:
     """Yield a new connection and guarantee that it is closed afterward."""
-    connection = get_raw_connection()
+    connection = get_raw_connection(database_name)
     try:
         yield connection
     finally:

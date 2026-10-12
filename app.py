@@ -10,6 +10,7 @@ from api.auto_subrogation.claims import router as auto_subrogation_router
 from api.landing.claims import router as landing_router
 from api.pal_severity.claims import router as pal_severity_router
 from api.third_party_auto.claims import router as claims_router
+from api.third_party_auto.dashboard import router as third_party_dashboard_router
 from api.third_party_auto.cts_users import router as cts_users_router
 from api.third_party_auto.user_roster import router as user_roster_router
 from api.user_info import router as user_info_router
@@ -39,6 +40,11 @@ async def health_check() -> dict[str, str]:
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(user_info_router, prefix="/api", tags=["auth"])
 app.include_router(claims_router, prefix="/claims", tags=["claims"])
+app.include_router(
+    third_party_dashboard_router,
+    prefix="/claims/dashboard",
+    tags=["third_party_auto_dashboard"],
+)
 app.include_router(landing_router, prefix="/landing", tags=["landing"])
 app.include_router(cts_users_router, prefix="/cts_users", tags=["cts_users"])
 app.include_router(user_roster_router, prefix="/user_roster", tags=["user_roster"])
