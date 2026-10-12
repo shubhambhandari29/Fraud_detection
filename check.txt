@@ -1,4 +1,23 @@
-"severity": [
-  {"Predictions": "High", "Action": null},
-  {"Predictions": "High", "Action": "Settle"}
-]
+Failed to fetch Third Party Auto dashboard for claim 85-00772716
+Traceback (most recent call last):
+  File "C:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\services\third_party_auto\dashboard_service.py", line 306, in get_dashboard
+    fraud, vendor, datatext = await asyncio.gather(
+                              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\starlette\concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\anyio\to_thread.py", line 61, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\anyio\_backends\_asyncio.py", line 2525, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\sxb640\AppData\Roaming\Python\Python312\site-packages\anyio\_backends\_asyncio.py", line 986, in run     
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\services\third_party_auto\dashboard_service.py", line 199, in _fetch_datatext_sections
+    return {"game_summary": _fetch_rows(connection.cursor(), GAME_SUMMARY_QUERY, claim_number)}
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\services\third_party_auto\dashboard_service.py", line 168, in _fetch_rows
+    cursor.execute(query, [claim_number])
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'template'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
