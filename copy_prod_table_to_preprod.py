@@ -19,8 +19,8 @@ import pyodbc
 
 
 # Change only these two values. TABLE_NAME may include the schema.
-DATABASE_NAME = "CLMDS_DataModelingAndTextMining"
-TABLE_NAME = "dbo.tblFraudThirdPartyAutoBI_GAME"
+DATABASE_NAME = "CLMAA_FraudModel"
+TABLE_NAME = "dbo.tblFraudAutoDashboardEDW"
 
 PROD_SERVER = "clms-prd-sqlmanagedinstance.445cfa5e0fe5.database.windows.net"
 PREPROD_SERVER = "clms-preprd-sqlmanagedinstance.3b98dc354c37.database.windows.net"
@@ -28,16 +28,6 @@ ODBC_DRIVER = "{ODBC Driver 17 for SQL Server}"
 AUTHENTICATION = "ActiveDirectoryInteractive"
 BATCH_SIZE = 1_000
 CONNECTION_TIMEOUT_SECONDS = 30
-
-# These six columns are copied. The last three are added to PREPROD when absent.
-COPY_COLUMN_NAMES = (
-    "clm_nbr",
-    "topic",
-    "value",
-    "template",
-    "Date_Generated",
-    "Word_Length",
-)
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_ $-]*$")
 
@@ -201,21 +191,6 @@ def add_missing_columns(
     return added
 
 
-def select_copy_columns(
-    prod_columns: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Resolve the exact six copy columns using PROD's spelling and metadata."""
-    prod_by_name = {
-        str(column["column_name"]).strip().casefold(): column for column in prod_columns
-    }
-    missing_from_prod = [name for name in COPY_COLUMN_NAMES if name.casefold() not in prod_by_name]
-    if missing_from_prod:
-        raise RuntimeError(
-            "Required copy column(s) missing from PROD: " + ", ".join(missing_from_prod)
-        )
-    return [prod_by_name[name.casefold()] for name in COPY_COLUMN_NAMES]
-
-
 def row_count(cursor: pyodbc.Cursor, qualified_table: str) -> int:
     cursor.execute(f"SELECT COUNT_BIG(*) FROM {qualified_table}")
     return int(cursor.fetchone()[0])
@@ -291,7 +266,9 @@ def main() -> None:
         if not table_exists(preprod_cursor, schema, table):
             raise RuntimeError(f"Target table {schema}.{table} does not exist in PREPROD")
 
-        prod_columns = select_copy_columns(fetch_columns(prod_cursor, schema, table))
+        prod_columns = fetch_columns(prod_cursor, schema, table)
+        if not prod_columns:
+            raise RuntimeError(f"Source table {schema}.{table} has no columns in PROD")
         preprod_columns = fetch_columns(preprod_cursor, schema, table)
         expected_rows = row_count(prod_cursor, qualified)
         existing_rows = row_count(preprod_cursor, qualified)
@@ -307,7 +284,10 @@ def main() -> None:
             if str(column["column_name"]).strip().casefold() not in preprod_names
         ]
         print("Columns to add: " + (", ".join(missing_columns) if missing_columns else "none"))
-        print("Columns to copy: " + ", ".join(COPY_COLUMN_NAMES))
+        print(
+            "PROD columns to synchronize: "
+            + ", ".join(str(column["column_name"]) for column in prod_columns)
+        )
 
         expected_confirmation = f"SYNC {schema}.{table}"
         confirmation = input(f"Type '{expected_confirmation}' exactly to continue: ").strip()
