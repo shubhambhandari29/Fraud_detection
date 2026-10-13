@@ -6,6 +6,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from api.auth import router as auth_router
 from api.abi_litigation.claims import router as abi_litigation_router
+from api.abi_litigation.dashboard import router as abi_litigation_dashboard_router
 from api.auto_subrogation.claims import router as auto_subrogation_router
 from api.landing.claims import router as landing_router
 from api.pal_severity.claims import router as pal_severity_router
@@ -52,6 +53,11 @@ app.include_router(
     abi_litigation_router,
     prefix="/abi_litigation",
     tags=["abi_litigation"],
+)
+app.include_router(
+    abi_litigation_dashboard_router,
+    prefix="/abi_litigation/dashboard",
+    tags=["abi_litigation_dashboard"],
 )
 app.include_router(
     pal_severity_router,
