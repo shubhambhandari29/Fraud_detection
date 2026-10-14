@@ -24,6 +24,10 @@ def _serialize_date_value(value: Any, *, parse_string: bool) -> Any:
         return value.isoformat()
     if parse_string and isinstance(value, str):
         stripped = value.strip()
+        try:
+            return datetime.fromisoformat(stripped).date().isoformat()
+        except ValueError:
+            pass
         for date_format in (
             "%Y-%m-%d",
             "%Y-%m-%d %H:%M:%S",

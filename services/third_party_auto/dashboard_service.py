@@ -17,6 +17,7 @@ from core.models.third_party_auto_dashboard import (
     ThirdPartyAutoDashboard,
 )
 from db import db_connection
+from services.dashboard_placeholders import empty_section_or_placeholder
 
 
 logger = logging.getLogger(__name__)
@@ -319,22 +320,27 @@ async def get_dashboard(claim_number: str) -> ThirdPartyAutoDashboard:
         ies_bills = _attach_ies_flags(bills, flags)
         game_summary = serialize_record_dates(datatext["game_summary"])
 
-        return ThirdPartyAutoDashboard(
-            claim_number=normalized_claim_number,
-            indicators=_build_indicators(
-                edw=edw,
-                cts=cts,
-                smart_features=smart_features,
-                watchlist=watchlist,
-                carpe=carpe,
-                ies_bills=ies_bills,
-            ),
+        indicators = _build_indicators(
             edw=edw,
             cts=cts,
             smart_features=smart_features,
             watchlist=watchlist,
             carpe=carpe,
             ies_bills=ies_bills,
+        )
+        return ThirdPartyAutoDashboard(
+            claim_number=normalized_claim_number,
+            indicators=indicators,
+            edw=empty_section_or_placeholder(edw, "fraud.edw", normalized_claim_number),
+            cts=cts,
+            smart_features=smart_features,
+            watchlist=empty_section_or_placeholder(
+                watchlist, "fraud.watchlist", normalized_claim_number
+            ),
+            carpe=carpe,
+            ies_bills=empty_section_or_placeholder(
+                ies_bills, "fraud.ies_bills", normalized_claim_number
+            ),
             alert_reasons=_split_alert_reasons(fraud["alert_reason_rows"]),
             game_summary=game_summary,
         )

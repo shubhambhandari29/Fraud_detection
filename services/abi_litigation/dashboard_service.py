@@ -11,6 +11,7 @@ from core.config import settings
 from core.db_helpers import serialize_record_dates
 from core.models.abi_litigation_dashboard import AbiLitigationDashboard
 from db import db_connection
+from services.dashboard_placeholders import empty_section_or_placeholder
 
 
 logger = logging.getLogger(__name__)
@@ -144,8 +145,10 @@ async def get_dashboard(claim_number: str) -> AbiLitigationDashboard:
         return AbiLitigationDashboard(
             claim_number=normalized_claim_number,
             edw=serialize_record_dates(sections["edw"]),
-            game_summary=serialize_record_dates(
-                _build_game_summaries(sections["game_rows"])
+            game_summary=empty_section_or_placeholder(
+                serialize_record_dates(_build_game_summaries(sections["game_rows"])),
+                "litigation.game_summary",
+                normalized_claim_number,
             ),
             game_summary_legacy=serialize_record_dates(
                 [

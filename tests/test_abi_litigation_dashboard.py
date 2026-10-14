@@ -122,6 +122,9 @@ def test_dashboard_returns_legacy_game_sections(monkeypatch):
 
     assert result.game_summary_legacy[0]["Claim Summary"] == "In discovery"
     assert result.game_summary_legacy[0]["Game_Run_Date"] == "2026-10-12"
+    assert result.game_summary[0]["_dummy"] is True
+    assert result.game_summary[0]["DERIVE_CLM_FTR_NBR"] == "85-00837106-02"
+    assert "Current Status of the Litigation" in result.game_summary[0]
 
 
 def test_dashboard_route_is_authenticated_and_forwards_claim(monkeypatch):

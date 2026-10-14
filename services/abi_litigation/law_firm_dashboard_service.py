@@ -12,6 +12,7 @@ from core.config import settings
 from core.db_helpers import serialize_record_dates
 from core.models.abi_litigation_law_firm_dashboard import LawFirmDashboard, LawFirmKpis
 from db import db_connection
+from services.dashboard_placeholders import empty_section_or_placeholder
 
 
 logger = logging.getLogger(__name__)
@@ -93,6 +94,10 @@ def _as_date(value: Any) -> date | None:
         return value
     if isinstance(value, str):
         stripped = value.strip()
+        try:
+            return datetime.fromisoformat(stripped).date()
+        except ValueError:
+            pass
         for date_format in (
             "%Y-%m-%d",
             "%Y-%m-%d %H:%M:%S",
@@ -238,12 +243,16 @@ async def get_law_firm_dashboard(law_firm_name: str) -> LawFirmDashboard:
             law_firm_name=normalized_name,
             kpis=_build_kpis(rows),
             claim_info=serialize_record_dates(rows, date_columns=MATTER_DATE_COLUMNS),
-            notes=serialize_record_dates(sections["notes"]),
+            notes=empty_section_or_placeholder(
+                serialize_record_dates(sections["notes"]), "law_firm.notes", normalized_name
+            ),
             resolution_counts=_count_by(rows, "ATTY_ACTVTY_RESLTN_DESC"),
             settlement_bins=_settlement_bins(rows),
             line_of_business_counts=_count_by(rows, "HCS_POL_LOB_DESC"),
             jurisdiction_counts=_count_by(rows, "CLM_JRSDTN_ST_ABBR"),
-            annual_rates=_annual_rates(rows),
+            annual_rates=empty_section_or_placeholder(
+                _annual_rates(rows), "law_firm.annual_rates", normalized_name
+            ),
         )
     except HTTPException:
         raise

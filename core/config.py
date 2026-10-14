@@ -29,6 +29,10 @@ class Settings:
     DB_DRIVER: str = os.getenv("DB_DRIVER", "{ODBC Driver 18 for SQL Server}")
     DB_AUTH: str | None = os.getenv("DB_AUTH")
     DB_CONNECTION_TIMEOUT: int = int(os.getenv("DB_CONNECTION_TIMEOUT", "15"))
+    # Temporary UI-development fixtures for empty dashboard sections only.
+    DASHBOARD_PLACEHOLDERS_ENABLED: bool = (
+        os.getenv("DASHBOARD_PLACEHOLDERS_ENABLED", "true").strip().lower() == "true"
+    )
 
     # Temporary JWT authentication configuration
     SECRET_KEY: str = os.getenv("SECRET_KEY", "development-only-change-me")

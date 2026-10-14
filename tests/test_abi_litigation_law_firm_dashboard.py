@@ -99,3 +99,37 @@ def test_law_firm_route_requires_auth(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["law_firm_name"] == "Firm A"
+
+
+def test_law_firm_uses_real_rates_for_sql_datetime_strings_and_fills_missing_notes(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        law_firm_dashboard_service,
+        "_fetch_law_firm_sections",
+        lambda name: {
+            "claim_info": [
+                {
+                    "CLM_NBR_U": "85-00000001",
+                    "MATTER_HCS_SYS_ID": "M1",
+                    "CLM_RPTD_DT_U": "2021-02-10 00:00:00.0000000",
+                    "CLM_CLOSE_DT_U": "2022-03-16 00:00:00.0000000",
+                    "LGL_MATTER_OPEN_DT": "2021-09-18 00:00:00.0000000",
+                    "LAWSUIT_CLOSE_DT": "2022-03-16 00:00:00.0000000",
+                    "ATTY_ACTVTY_RESLTN_DESC": "Settled during Discovery",
+                }
+            ],
+            "notes": [],
+        },
+    )
+
+    result = asyncio.run(law_firm_dashboard_service.get_law_firm_dashboard("Firm A"))
+
+    assert result.claim_info[0]["CLM_RPTD_DT_U"] == "2021-02-10"
+    assert result.kpis.litigation_duration_days == 179
+    assert result.kpis.claim_duration_days == 399
+    assert result.annual_rates == [
+        {"year": 2021, "settlement_percentage": 100, "trial_percentage": 0}
+    ]
+    assert result.notes[0]["_dummy"] is True
+    assert result.notes[0]["Category"] == "Full Summary"

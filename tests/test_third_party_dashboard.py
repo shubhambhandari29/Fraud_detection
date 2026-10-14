@@ -123,6 +123,37 @@ def test_dashboard_returns_n_for_missing_related_sections(monkeypatch):
     result = asyncio.run(dashboard_service.get_dashboard("85-00370154"))
 
     assert set(result.indicators.model_dump().values()) == {"N"}
+    assert result.edw[0]["Clm_Nbr"] == "85-00370154"
+    assert result.edw[0]["_dummy"] is True
+    assert result.watchlist[0]["_dummy"] is True
+    assert result.ies_bills[0]["Claim Number"] == "85-00370154"
+    assert result.ies_bills[0]["Flags"][0]["_dummy"] is True
+
+
+def test_dashboard_placeholder_switch_can_restore_empty_arrays(monkeypatch):
+    monkeypatch.setattr(dashboard_service.settings, "DASHBOARD_PLACEHOLDERS_ENABLED", False)
+    monkeypatch.setattr(
+        dashboard_service,
+        "_fetch_fraud_sections",
+        lambda claim_number: {
+            "edw": [], "cts": [], "smart_features": [], "watchlist": [],
+            "ies_bills": [], "ies_flags": [], "alert_reason_rows": [],
+        },
+    )
+    monkeypatch.setattr(
+        dashboard_service, "_fetch_vendor_sections", lambda claim_number: {"carpe": []}
+    )
+    monkeypatch.setattr(
+        dashboard_service,
+        "_fetch_datatext_sections",
+        lambda claim_number: {"game_summary": []},
+    )
+
+    result = asyncio.run(dashboard_service.get_dashboard("85-00370154"))
+
+    assert result.edw == []
+    assert result.watchlist == []
+    assert result.ies_bills == []
 
 
 def test_dashboard_route_is_authenticated_and_forwards_claim(monkeypatch):
