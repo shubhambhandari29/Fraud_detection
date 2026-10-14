@@ -12,21 +12,17 @@ upsert, or transfer endpoints.
 
 ## Database configuration
 
-The dashboard reads from three databases. They use the existing SQL Server
-driver and authentication settings. The Vendor database can use a separate
-server through `VENDOR_DB_SERVER`.
+The dashboard reads from three databases on the SQL Server configured by
+`DB_SERVER`, using the existing driver and authentication settings.
 
 ```env
 DATATEXT_DB_NAME=CLMDS_DataModelingAndTextMining
 FRAUD_DB_NAME=CLMAA_FraudModel
 VENDOR_DB_NAME=CLM_VendorData
-VENDOR_DB_SERVER=prpre2-clms-azsql01.database.windows.net
 ```
 
 `DATATEXT_DB_NAME` falls back to the existing `DB_NAME`. The Fraud and Vendor
-database names have the Power BI source names as defaults. `VENDOR_DB_SERVER`
-is optional and defaults to `DB_SERVER`; set it when the Vendor database is
-hosted on a separate SQL Server.
+database names have the Power BI source names as defaults.
 
 ## Response
 

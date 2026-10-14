@@ -187,7 +187,7 @@ def _fetch_fraud_sections(claim_number: str) -> dict[str, list[dict[str, Any]]]:
 
 def _fetch_vendor_sections(claim_number: str) -> dict[str, list[dict[str, Any]]]:
     """Load the Carpe section stored in CLM_VendorData."""
-    with db_connection(settings.VENDOR_DB_NAME, settings.VENDOR_DB_SERVER) as connection:
+    with db_connection(settings.VENDOR_DB_NAME) as connection:
         return {"carpe": _fetch_rows(connection.cursor(), CARPE_QUERY, claim_number)}
 
 

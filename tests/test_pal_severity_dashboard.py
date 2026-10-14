@@ -2,13 +2,11 @@
 
 import asyncio
 from datetime import datetime
-from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
 from api.pal_severity import dashboard as dashboard_api
 from app import app
-import db
 from services.auth_service import get_current_user_from_token
 from services.pal_severity import dashboard_service
 
@@ -59,21 +57,3 @@ def test_dashboard_route_requires_auth_and_forwards_claim(monkeypatch):
         "edw": [],
         "carpe": [],
     }
-
-
-def test_vendor_connection_can_use_separate_server(monkeypatch):
-    monkeypatch.setattr(
-        db,
-        "settings",
-        SimpleNamespace(
-            DB_DRIVER="{Driver}",
-            DB_SERVER="default-server",
-            DB_NAME="CLMDS_DataModelingAndTextMining",
-            DB_AUTH="auth",
-        ),
-    )
-
-    connection_string = db._build_connection_string("CLM_VendorData", "vendor-server")
-
-    assert "Server=vendor-server;" in connection_string
-    assert "Database=CLM_VendorData;" in connection_string

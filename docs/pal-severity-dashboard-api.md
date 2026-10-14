@@ -22,7 +22,6 @@ claim-feature value. Both arrays retain all matching rows.
 }
 ```
 
-The report's Vendor source is on `prpre2-clms-azsql01.database.windows.net`.
-Set `VENDOR_DB_SERVER` to that host when `DB_SERVER` points to a different
-server. It defaults to `DB_SERVER`. `VENDOR_DB_NAME` defaults to
-`CLM_VendorData`. Dates returned as SQL date/datetime values use `YYYY-MM-DD`.
+Both databases use the SQL Server configured by `DB_SERVER`.
+`VENDOR_DB_NAME` defaults to `CLM_VendorData`. Dates returned as SQL
+date/datetime values use `YYYY-MM-DD`.

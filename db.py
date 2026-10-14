@@ -17,12 +17,9 @@ def _required_setting(name: str, value: str | None) -> str:
     return value
 
 
-def _build_connection_string(
-    database_name: str | None = None,
-    server_name: str | None = None,
-) -> str:
+def _build_connection_string(database_name: str | None = None) -> str:
     """Build the encrypted SQL Server ODBC connection string."""
-    server = _required_setting("DB_SERVER", server_name or settings.DB_SERVER)
+    server = _required_setting("DB_SERVER", settings.DB_SERVER)
     authentication = _required_setting("DB_AUTH", settings.DB_AUTH)
     database = _required_setting("DB_NAME", database_name or settings.DB_NAME)
 
@@ -72,18 +69,10 @@ def _handle_datetimeoffset(
     )
 
 
-def get_raw_connection(
-    database_name: str | None = None,
-    server_name: str | None = None,
-) -> pyodbc.Connection:
+def get_raw_connection(database_name: str | None = None) -> pyodbc.Connection:
     """Open and return a new SQL Server connection."""
-    connection_string = (
-        _build_connection_string(database_name)
-        if server_name is None
-        else _build_connection_string(database_name, server_name)
-    )
     connection = pyodbc.connect(
-        connection_string,
+        _build_connection_string(database_name),
         timeout=settings.DB_CONNECTION_TIMEOUT,
     )
     datetimeoffset_type = getattr(pyodbc, "SQL_SS_TIMESTAMPOFFSET", -155)
@@ -96,16 +85,9 @@ def get_raw_connection(
 
 
 @contextmanager
-def db_connection(
-    database_name: str | None = None,
-    server_name: str | None = None,
-) -> Iterator[pyodbc.Connection]:
+def db_connection(database_name: str | None = None) -> Iterator[pyodbc.Connection]:
     """Yield a new connection and guarantee that it is closed afterward."""
-    connection = (
-        get_raw_connection(database_name)
-        if server_name is None
-        else get_raw_connection(database_name, server_name)
-    )
+    connection = get_raw_connection(database_name)
     try:
         yield connection
     finally:

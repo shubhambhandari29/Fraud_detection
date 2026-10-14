@@ -65,7 +65,7 @@ def _fetch_edw(claim_number: str) -> list[dict[str, Any]]:
 
 
 def _fetch_carpe(claim_number: str) -> list[dict[str, Any]]:
-    with db_connection(settings.VENDOR_DB_NAME, settings.VENDOR_DB_SERVER) as connection:
+    with db_connection(settings.VENDOR_DB_NAME) as connection:
         return _fetch_rows(connection.cursor(), CARPE_QUERY, claim_number)
 
 
