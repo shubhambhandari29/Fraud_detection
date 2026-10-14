@@ -26,6 +26,7 @@ class Settings:
     DATATEXT_DB_NAME: str = os.getenv("DATATEXT_DB_NAME", DB_NAME)
     FRAUD_DB_NAME: str = os.getenv("FRAUD_DB_NAME", "CLMAA_FraudModel")
     VENDOR_DB_NAME: str = os.getenv("VENDOR_DB_NAME", "CLM_VendorData")
+    VENDOR_DB_SERVER: str | None = os.getenv("VENDOR_DB_SERVER")
     DB_DRIVER: str = os.getenv("DB_DRIVER", "{ODBC Driver 18 for SQL Server}")
     DB_AUTH: str | None = os.getenv("DB_AUTH")
     DB_CONNECTION_TIMEOUT: int = int(os.getenv("DB_CONNECTION_TIMEOUT", "15"))

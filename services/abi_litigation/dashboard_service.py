@@ -50,6 +50,20 @@ WHERE [DERIVE_CLM_FTR_NBR] = ?
 ORDER BY [Game_Run_Date] DESC
 """
 
+LEGACY_GAME_QUERY = """
+SELECT
+    [DERIVE_CLM_FTR_NBR],
+    [Topic],
+    [Summary],
+    [Game_Run_Date],
+    [Word_Length]
+FROM [dbo].[tblALLitigation_GAME_REASONS]
+WHERE [DERIVE_CLM_FTR_NBR] = ?
+  AND [LITIGATION] = 0
+  AND [Summary] <> 'Error : 400'
+ORDER BY [Game_Run_Date] DESC
+"""
+
 _NARRATIVE_FIELDS = {
     "summary of the current status of the claim": "Summary of the Current Status of the Claim",
     "current status of the litigation": "Current Status of the Litigation",
@@ -74,6 +88,7 @@ def _fetch_dashboard_sections(claim_number: str) -> dict[str, list[dict[str, Any
         return {
             "edw": _fetch_rows(cursor, EDW_QUERY, claim_number),
             "game_rows": _fetch_rows(cursor, GAME_QUERY, claim_number),
+            "legacy_game_rows": _fetch_rows(cursor, LEGACY_GAME_QUERY, claim_number),
         }
 
 
@@ -131,6 +146,17 @@ async def get_dashboard(claim_number: str) -> AbiLitigationDashboard:
             edw=serialize_record_dates(sections["edw"]),
             game_summary=serialize_record_dates(
                 _build_game_summaries(sections["game_rows"])
+            ),
+            game_summary_legacy=serialize_record_dates(
+                [
+                    {
+                        **row,
+                        "Claim Summary": str(row["Summary"]).replace("*", "").strip()
+                        if row.get("Summary") is not None
+                        else None,
+                    }
+                    for row in sections.get("legacy_game_rows", [])
+                ]
             ),
         )
     except HTTPException:

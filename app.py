@@ -7,9 +7,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from api.auth import router as auth_router
 from api.abi_litigation.claims import router as abi_litigation_router
 from api.abi_litigation.dashboard import router as abi_litigation_dashboard_router
+from api.abi_litigation.law_firm_dashboard import router as abi_litigation_law_firm_router
 from api.auto_subrogation.claims import router as auto_subrogation_router
 from api.landing.claims import router as landing_router
 from api.pal_severity.claims import router as pal_severity_router
+from api.pal_severity.dashboard import router as pal_severity_dashboard_router
 from api.third_party_auto.claims import router as claims_router
 from api.third_party_auto.dashboard import router as third_party_dashboard_router
 from api.third_party_auto.cts_users import router as cts_users_router
@@ -43,7 +45,7 @@ app.include_router(user_info_router, prefix="/api", tags=["auth"])
 app.include_router(claims_router, prefix="/claims", tags=["claims"])
 app.include_router(
     third_party_dashboard_router,
-    prefix="/claims/dashboard",
+    prefix="/fraud/dashboard",
     tags=["third_party_auto_dashboard"],
 )
 app.include_router(landing_router, prefix="/landing", tags=["landing"])
@@ -60,9 +62,19 @@ app.include_router(
     tags=["abi_litigation_dashboard"],
 )
 app.include_router(
+    abi_litigation_law_firm_router,
+    prefix="/abi_litigation/law_firm/dashboard",
+    tags=["abi_litigation_law_firm_dashboard"],
+)
+app.include_router(
     pal_severity_router,
     prefix="/pal_severity",
     tags=["pal_severity"],
+)
+app.include_router(
+    pal_severity_dashboard_router,
+    prefix="/pal_severity/dashboard",
+    tags=["pal_severity_dashboard"],
 )
 app.include_router(
     auto_subrogation_router,

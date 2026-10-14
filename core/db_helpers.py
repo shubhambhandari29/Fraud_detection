@@ -17,15 +17,40 @@ _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_ ]*$")
 LAST_UPDATED_BY_COLUMN = "Last Updated By"
 
 
-def serialize_record_dates(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Return SQL records with every date/datetime represented as YYYY-MM-DD."""
+def _serialize_date_value(value: Any, *, parse_string: bool) -> Any:
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if parse_string and isinstance(value, str):
+        stripped = value.strip()
+        for date_format in (
+            "%Y-%m-%d",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M:%S.%f",
+            "%m/%d/%Y",
+            "%m/%d/%Y %H:%M:%S",
+            "%Y%m%d",
+        ):
+            try:
+                return datetime.strptime(stripped, date_format).date().isoformat()
+            except ValueError:
+                continue
+    return value
+
+
+def serialize_record_dates(
+    records: list[dict[str, Any]],
+    *,
+    date_columns: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Represent SQL dates and nominated text date columns as YYYY-MM-DD."""
     return [
         {
-            column: value.date().isoformat()
-            if isinstance(value, datetime)
-            else value.isoformat()
-            if isinstance(value, date)
-            else value
+            column: _serialize_date_value(
+                value,
+                parse_string=date_columns is not None and column in date_columns,
+            )
             for column, value in record.items()
         }
         for record in records

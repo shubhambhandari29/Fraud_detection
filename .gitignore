@@ -12,3 +12,6 @@ tests/*
 !tests/test_landing.py
 !tests/test_claim_get.py
 !tests/test_third_party_dashboard.py
+!tests/test_abi_litigation_dashboard.py
+!tests/test_abi_litigation_law_firm_dashboard.py
+!tests/test_pal_severity_dashboard.py

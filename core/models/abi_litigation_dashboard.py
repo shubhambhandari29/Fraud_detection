@@ -11,3 +11,4 @@ class AbiLitigationDashboard(BaseModel):
     claim_number: str
     edw: list[dict[str, Any]] = Field(default_factory=list)
     game_summary: list[dict[str, Any]] = Field(default_factory=list)
+    game_summary_legacy: list[dict[str, Any]] = Field(default_factory=list)

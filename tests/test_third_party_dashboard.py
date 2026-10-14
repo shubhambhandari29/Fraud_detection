@@ -147,7 +147,7 @@ def test_dashboard_route_is_authenticated_and_forwards_claim(monkeypatch):
     monkeypatch.setattr(dashboard_api, "get_dashboard", fake_dashboard)
     app.dependency_overrides[get_current_user_from_token] = lambda: object()
     try:
-        response = TestClient(app).get("/claims/dashboard/85-00370154")
+        response = TestClient(app).get("/fraud/dashboard/85-00370154")
     finally:
         app.dependency_overrides.pop(get_current_user_from_token, None)
 
@@ -157,4 +157,4 @@ def test_dashboard_route_is_authenticated_and_forwards_claim(monkeypatch):
 
 
 def test_dashboard_route_is_registered():
-    assert "/claims/dashboard/{claim_number}" in {route.path for route in app.routes}
+    assert "/fraud/dashboard/{claim_number}" in {route.path for route in app.routes}
