@@ -1,7 +1,347 @@
-  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 510, in <module>
-    main()
-  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 475, in main
-    create_target_table(preprod_cursor, schema, table, columns)
-  File "c:\Users\sxb640\OneDrive - Hanover Insurance\Desktop\Hanover\SACPlatformAPI\copy_script.py", line 317, in create_target_table
-    raise RuntimeError(
-RuntimeError: Failed to create column 'clm_nbr'. Generated SQL: ALTER TABLE [dbo].[tblFraudThirdPartyAutoBI_GAME] ADD [clm_nbr] [nvarchar](MAX) COLLATE SQL_Latin1_General_CP1_CI_AS IDENTITY(,) NULL
+resposne for third party dashboard API:
+
+{
+  "claim_number": "85-00772716",
+  "indicators": {
+    "assigned": "Y",
+    "dcw": "N",
+    "cts": "Y",
+    "smart_features": "Y",
+    "watchlist": "N",
+    "carpe": "Y",
+    "ies_bills": "N",
+    "iso_match": "N"
+  },
+  "edw": [],
+  "cts": [
+    {
+      "CaseID": 74612,
+      "CauseType": "PIP/Med Pay",
+      "CaseType": "Medical Claim",
+      "InvestigationType": "Activity Check",
+      "NICBReferral": false,
+      "NICBInvolvement": false,
+      "PolicyNumber": "J007248",
+      "RiskState": "MI",
+      "ReferralStatus": "Investigator Assigned",
+      "InvestigatorName": "BANFIELD, DONALD",
+      "AssignmentDate": "2025-06-04",
+      "ReferredToLawEnf": false,
+      "ResultStatus": "Paid"
+    },
+    {
+      "CaseID": 74989,
+      "CauseType": "PIP/Med Pay",
+      "CaseType": "Provider",
+      "InvestigationType": "Provider Investigation",
+      "NICBReferral": false,
+      "NICBInvolvement": false,
+      "PolicyNumber": null,
+      "RiskState": null,
+      "ReferralStatus": "Investigator Assigned",
+      "InvestigatorName": "GODMAN, MARC",
+      "AssignmentDate": "2025-06-25",
+      "ReferredToLawEnf": false,
+      "ResultStatus": "Paid"
+    }
+  ],
+  "smart_features": [
+    {
+      "AutoScoreID": 797281,
+      "Base": 9,
+      "Geo": 4,
+      "Lossfreq": 1,
+      "Intelli": 1,
+      "LossAddr": 0,
+      "Addbase": 1,
+      "Enthist": 0,
+      "MailAddr": 4,
+      "Vinhist": 0,
+      "bodily": 0,
+      "Losstime": 3
+    },
+    {
+      "AutoScoreID": 888521,
+      "Base": 9,
+      "Geo": 4,
+      "Lossfreq": 0,
+      "Intelli": 1,
+      "LossAddr": 1,
+      "Addbase": 1,
+      "Enthist": 5,
+      "MailAddr": 5,
+      "Vinhist": null,
+      "bodily": 0,
+      "Losstime": 3
+    },
+    {
+      "AutoScoreID": 1446322,
+      "Base": 8,
+      "Geo": 4,
+      "Lossfreq": 0,
+      "Intelli": 2,
+      "LossAddr": 1,
+      "Addbase": 1,
+      "Enthist": 5,
+      "MailAddr": 4,
+      "Vinhist": null,
+      "bodily": 0,
+      "Losstime": 3
+    },
+    {
+      "AutoScoreID": 1554821,
+      "Base": 9,
+      "Geo": 5,
+      "Lossfreq": 2,
+      "Intelli": 1,
+      "LossAddr": 1,
+      "Addbase": 1,
+      "Enthist": 2,
+      "MailAddr": 5,
+      "Vinhist": 0,
+      "bodily": 0,
+      "Losstime": 3
+    },
+    {
+      "AutoScoreID": 1710894,
+      "Base": 8,
+      "Geo": 4,
+      "Lossfreq": 0,
+      "Intelli": 0,
+      "LossAddr": 1,
+      "Addbase": 1,
+      "Enthist": 5,
+      "MailAddr": 4,
+      "Vinhist": null,
+      "bodily": 0,
+      "Losstime": 3
+    },
+    {
+      "AutoScoreID": 1888790,
+      "Base": 9,
+      "Geo": 5,
+      "Lossfreq": 2,
+      "Intelli": 1,
+      "LossAddr": 1,
+      "Addbase": 1,
+      "Enthist": 0,
+      "MailAddr": 4,
+      "Vinhist": 0,
+      "bodily": 0,
+      "Losstime": 3
+    }
+  ],
+  "watchlist": [],
+  "carpe": [
+    {
+      "ClientID": "85-00772716-06",
+      "ReasonCode": "Information related to the claim",
+      "Coverage": "PIP",
+      "ReviewStatus": "Not Reviewed",
+      "ImpactSeverity": null,
+      "Notes": null,
+      "URL": "https://www.facebook.com/samlr2/posts/pfbid02Fn22qoAxrbmBT7WASNCcfHaV6etSkqW5w7PMsrRcSnpdc3MPxLEzwchoDtPdQVakl",
+      "DateRun": "2025-07-04"
+    },
+    {
+      "ClientID": "85-00772716-08",
+      "ReasonCode": "Information related to the claim",
+      "Coverage": "BODILY INJURY",
+      "ReviewStatus": "Not Reviewed",
+      "ImpactSeverity": null,
+      "Notes": null,
+      "URL": "https://www.facebook.com/samlr2/posts/pfbid0BvpRfArXZGLCJFZyQJrhu8PqHfr3gGwY8zFf725f3HnmarxzpqRveiE7UYVszEMil",
+      "DateRun": "2025-08-18"
+    }
+  ],
+  "ies_bills": [],
+  "alert_reasons": [
+    "A participant in this loss is represented by an attorney",
+    "There was a delay of 160 days between the Date of Loss and the third party bodily injury Feature Create Date",
+    "G3 - Insured has a history of multiple accidents within 60 days for one policy",
+    "G4 - Accident occurred less than 60 days after the addition of comprehensive and collision coverage to the policy"
+  ],
+  "game_summary": [
+    {
+      "clm_nbr": "85-00772716",
+      "topic": "Social Media",
+      "value": "No Indicator Found",
+      "template": "Analyst Template"
+    },
+    {
+      "clm_nbr": "85-00772716",
+      "topic": "Key People and Organisation Involved in Claim",
+      "value": "{\n  \"topic\": \"Key People and Organisation Involved in Claim\",\n  \"individuals\": [\n    {\"name\": \"Heather Eikey\", \"role\": \"Named Insured / main contact / grandmother\"},\n    {\"name\": \"Samantha Robinson\", \"role\": \"Insured driver / injured party / claimant\"},\n    {\"name\": \"Renly Robinson\", \"role\": \"Minor claimant / passenger\"},\n    {\"name\": \"Laeth Robinson\", \"role\": \"Minor claimant / passenger\"},\n    {\"name\": \"Hiram Robinson\", \"role\": \"Minor claimant / passenger\"},\n    {\"name\": \"Gustavo Miranda-Giron\", \"role\": \"Tortfeasor / OV1 driver (proximately-causing driver per PR)\"},\n    {\"name\": \"Dynasty Maresha Wilson\", \"role\": \"OV2 driver (other involved driver)\"},\n    {\"name\": \"Alicia Alessandrini\", \"role\": \"OV4 driver (other involved driver)\"},\n    {\"name\": \"Oscar Neal\", \"role\": \"Witness (reported to have video of the crash)\"},\n    {\"name\": \"Natsha / Natasha Whipple\", \"role\": \"Witness (noted on police report)\"},\n    {\"name\": \"Paige Stiger\", \"role\": \"Attorney (The Sam Bernstein Law Firm) - initial counsel for Samantha Robinson\"},\n    {\"name\": \"Olivia Davis\", \"role\": \"Attorney contact (Sam Bernstein office / legal contact)\"},\n    {\"name\": \"Loryn Schlinker\", \"role\": \"Attorney (West Michigan Injury Lawyers PLC) - counsel for Samantha Robinson\"},\n    {\"name\": \"Rick J. Houghton\", \"role\": \"Attorney (Michigan Auto Law PC) - counsel for the three minor children\"},\n    {\"name\": \"Carol (X5796714)\", \"role\": \"Claims handler / adjuster (internal claimant handling)\"},\n    {\"name\": \"Nakeesha Mizell\", \"role\": \"Collision adjuster (Citizens; collision file reference)\"},\n    {\"name\": \"Sharina Griffin\", \"role\": \"Collision adjuster (Citizens; collision file reference)\"},\n    {\"name\": \"Alyssa Moore\", \"role\": \"BI adjuster (noted in file)\"},\n    {\"name\": \"Tamilynn Bailey\", \"role\": \"Liability adjuster (Hanover) - waived deductible on TL settlement\"},\n    {\"name\": \"Alexis Brazelton\", \"role\": \"PIP adjuster (requested SIU assistance)\"},\n    {\"name\": \"Don Banfield\", \"role\": \"SIU Medical Field Investigator (SIU Investigator)\"},\n    {\"name\": \"Tessa Philips\", \"role\": \"SIU UM analyst (assigned SIU referral)\"},\n    {\"name\": \"Matthew / Mathew Welsh\", \"role\": \"Owner / contact - Senior Home Solutions (ramp vendor)\"},\n    {\"name\": \"Dan Bordignon\", \"role\": \"Claims staff / requester (internal; referenced re: check issuance)\"},\n    {\"name\": \"Ed Parisi\", \"role\": \"Claims reviewer / RT file participant (internal reviewer)\"},\n    {\"name\": \"George Vladu\", \"role\": \"Claims reviewer / director-level reviewer (internal reviewer)\"},\n    {\"name\": \"Curtiss Flexter\", \"role\": \"Defense / panel counsel (Conlin McKenney) - handling litigation matters\"},\n    {\"name\": \"Jeffrey A. Hoard\", \"role\": \"Panel counsel (accepted litigation assignment)\"},\n    {\"name\": \"Kevin Travis\", \"role\": \"Panel counsel / attorney (defense panel contact)\"},\n    {\"name\": \"Erin Fisk\", \"role\": \"NCM / Case Manager (case management for claimants)\"},\n    {\"name\": \"Merrill Graham, PhD\", \"role\": \"Psychotherapist / behavioral health provider (treating minors)\"},\n    {\"name\": \"Gable Moffitt, MD\", \"role\": \"Orthopedic provider (Corewell Health)\"},\n    {\"name\": \"William Breese\", \"role\": \"Orthopedic provider (Corewell Health)\"},\n    {\"name\": \"Amanda Wood, MD\", \"role\": \"Provider / Family Medicine (Helen DeVos Children's Hospital / PCP)\"},\n    {\"name\": \"Kelly Armstrong, MD\", \"role\": \"PM&R physician (Mary Free Bed) - treating Samantha, work disability issuer\"},\n    {\"name\": \"Garett Pangrazzi, MD\", \"role\": \"Orthopedic foot & ankle surgeon (performed 03/04/2026 surgery)\"},\n    {\"name\": \"Jeralyn Hunter, PT\", \"role\": \"Physical Therapist (post-op PT)\"},\n    {\"name\": \"Erika Chapman, MOTR/L, CBIS\", \"role\": \"Occupational Therapist (home-based OT)\"},\n    {\"name\": \"Lauren (West Michigan Injury Lawyers)\", \"role\": \"Attorney contact at West Michigan Injury Lawyers (legal contact)\"},\n    {\"name\": \"Olson/KOR admin / KOR admin\", \"role\": \"Internal administrative/billing support (claim processing)\"},\n    {\"name\": \"Siara (Sam Bernstein)\", \"role\": \"Attorney staff / claimant contact (requested documents)\"},\n    {\"name\": \"Kristi (assistant to Jeff Hoard)\", \"role\": \"Panel counsel assistant (litigation support)\"}\n  ],\n  \"organizations\": [\n    {\"name\": \"Citizens Insurance Company of the Midwest\", \"role\": \"Insurer / underwriting company (insured carrier handling UM/UIM and PIP exposures)\"},\n    {\"name\": \"The Hanover Insurance Group\", \"role\": \"Insurer (tortfeasor Gustavo Miranda-Giron's carrier)\"},\n    {\"name\": \"The Sam Bernstein Law Firm\", \"role\": \"Law firm (initial counsel for Samantha Robinson)\"},\n    {\"name\": \"West Michigan Injury Lawyers PLC\", \"role\": \"Law firm (current counsel for Samantha Robinson)\"},\n    {\"name\": \"Michigan Auto Law PC\", \"role\": \"Law firm (represents the three minor children)\"},\n    {\"name\": \"Conlin, McKenney (cmplaw.com)\", \"role\": \"Panel defense counsel / law firm (assigned for litigation handling)\"},\n    {\"name\": \"VanHew / VanHewPC (panel domain referenced)\", \"role\": \"Panel counsel firm (panel litigation contact referenced)\"},\n    {\"name\": \"Grand Rapids Police Department\", \"role\": \"Investigating police agency (wrote Police Report #25-024169)\"},\n    {\"name\": \"Corewell Health Grand Rapids (Helen DeVos Children's Hospital)\", \"role\": \"Medical provider / hospital (treatment for minors and Samantha)\"},\n    {\"name\": \"Mary Free Bed Rehabilitation Hospital\", \"role\": \"Rehabilitation / PM&R provider (treating Samantha)\"},\n    {\"name\": \"Therapy Center for Behavioral Health and Rehabilitation Services\", \"role\": \"Behavioral health provider / case management services\"},\n    {\"name\": \"Impact Therapy LLC\", \"role\": \"Therapy provider (behavioral / attendant care vendor referenced)\"},\n    {\"name\": \"Senior Home Solutions\", \"role\": \"Vendor / contractor (ramp rental/installation)\"},\n    {\"name\": \"ComForCare Kent County\", \"role\": \"In-home services / attendant care provider (billing submissions)\"},\n    {\"name\": \"Step Forward Wellness\", \"role\": \"Physical therapy provider (post-op / PT services)\"},\n    {\"name\": \"NeuroRestorative\", \"role\": \"Post-op rehabilitation provider (PT/OT services)\"},\n    {\"name\": \"Airway Oxygen Inc\", \"role\": \"DME / oxygen supplier (billed services)\"},\n    {\"name\": \"Advanced Radiology Services (and related radiology providers)\", \"role\": \"Imaging provider (radiology bills on file)\"},\n    {\"name\": \"Teter Orthotics and Prosthetics\", \"role\": \"DME / orthotics provider (walking boot)\"},\n    {\"name\": \"Claritev / Multiplan\", \"role\": \"Medical lien / recovery networks (submitted liens for claimant)\"},\n    {\"name\": \"Medata\", \"role\": \"Medical billing/processing vendor (claims reprocessing / Medata portal)\"},\n    {\"name\": \"IAA (Insurance Auto Auctions) / IAA #42503166 / IAA salvage\", \"role\": \"Vehicle salvage / total loss disposition / auction / lienholder interactions\"},\n    {\"name\": \"Chase Auto Finance\", \"role\": \"Vehicle lienholder (on insured vehicle)\"},\n    {\"name\": \"Trinity Health Medical Group / Spectrum Health\", \"role\": \"Medical provider groups (PCP / specialists listed)\"},\n    {\"name\": \"The Hanover Law Group\", \"role\": \"Defense counsel / insurer law group for Hanover (litigation contact)\"},\n    {\"name\": \"DIFS (Michigan Dept of Insurance and Financial Services)\", \"role\": \"Regulatory body (UR / appeal correspondence referenced)\"},\n    {\"name\": \"KOR admin / KOR\", \"role\": \"Internal administrative unit (transcription / admin tasks referenced)\"},\n    {\"name\": \"Med Strategy / Medata / MBR Help\", \"role\": \"Medical bill review / recovery / payment processing units (internal/external vendors)\"},\n    {\"name\": \"SafeCare Transports / Ready Ride Michigan / non-emergency transport vendors\", \"role\": \"Medical transport providers (billing submitted)\"},\n    {\"name\": \"Hewson & Van Hellemont (panel domain referenced)\", \"role\": \"Panel counsel / law firm (panel litigation contact referenced)\"}\n  ]\n}",
+      "template": "Key People and Organisation Involved"
+    },
+    {
+      "clm_nbr": "85-00772716",
+      "topic": "Automobile Accident",
+      "value": "Indicator: Police issued warrants to search vehicles; IV impounded, \nEvidence: IBC from insured, Heather - was given info from Police. three vehicles involved. no fatalities - police issuing warrants to search all vehicle for drugs/alcohol - car still impound and cannot get to car until cars has been searched, \nDate: 2025-04-21, \nSource: EDW\n\n****************************************************\nIndicator: Insured's statement conflicts with police/witness account of how the crash occurred, \nEvidence: APD contacted insured driver, Samantha who indicated she was on 36 when a vehicle served into her lane and struck her vehicle. She was told 2 other cars were involved but not sure exactly how many. She was taken to hospital from the scene... Police Report indicates: Location: Kalamazoo Ave SE and Millbrook St Grand Rapids, MI ... Witness, Natasha Whbipple stated #2, #3 and #4 all were driving NB when vehicle #3 attempted to change lanes causing the crash., \nDate: 2025-04-29, \nSource: EDW\n\n****************************************************\nIndicator: Recent prior collision involving the same vehicle (same driver), \nEvidence: Priors: DOL: 8/4/2024---85-00656199- collision/ same veh as current loss/ driver: Samantha Robinson/ claim closed with no settlement issued / POI: front end, \nDate: 2025-06-04, \nSource: EDW\n\n****************************************************\nIndicator: Accurint/carrier discovery shows no other insurance policy for claimant, \nEvidence: She has no other policy per Accurint searches in file., \nDate: 2026-03-02, \nSource: EDW\n\n****************************************************\nIndicator: EDR/downloaded data and reconstruction report show high speeds and introduce alternative liability issues, \nEvidence: The report performed an EDR download of each of the vehicles involves. ... The other Co-Defendnat, Ms. Wilson's vehicle did have EDR data to download and showed her driving 44-46 mph leading up to the impact with our insured's vehicle. ... Our insured, Ms. Robinson's vehicle also had downloadable EDR data, which shows that she was driving 46 mph leading up to the moment of impact., \nDate: 2026-07-27, \nSource: EDW",
+      "template": "Analyst Template"
+    },
+    {
+      "clm_nbr": "85-00772716",
+      "topic": "Reporting Fraud",
+      "value": "Indicator: Bills with no clinical documentation and a DOS predating the accident, \nEvidence: There is no clinical documentation submitted with the bill. Additionally, there is a billed dated of service for 4/1/25 which pre-dates the motor vehicle accident., \nDate: 2025-08-04, \nSource: EDW\n\n****************************************************\nIndicator: Recorded statement/transcription not produced or pending transcription, \nEvidence: Exported R/S to be transcribed. Informed by KOR admin they do not handle transcriptions of r/s. Sending activity to admin to have r/s transcribed due to atty req., \nDate: 2025-05-19, \nSource: EDW\n\n****************************************************\nIndicator: Letter of Representation contains incorrect insured/policy identifier, \nEvidence: LOR rec'd w/ OVD listed as insured w/ wrong policy number. Informed LOR will need to be fixed and resent, \nDate: 2025-06-03, \nSource: EDW\n\n****************************************************\nIndicator: Lien(s) missing CPT codes preventing bill reconciliation, \nEvidence: Unable to determine paid bills due to the CPT codes missing from the Lien., \nDate: 2025-09-16, \nSource: EDW\n\n****************************************************\nIndicator: Provider repeatedly sending claim bills directly to file rather than to Medata for processing, \nEvidence: Billing from Behavior Center for Behavior Health, provider appears to keep sending dates of service directly to the claim instead of to Medata, however, some dates of service submitted appropriately., \nDate: 2026-01-12, \nSource: EDW\n\n****************************************************\nIndicator: Utilization review requests missing core supporting documentation (PT/OT evals, H&P, imaging, referrals), \nEvidence: Additional Documentation Requested: MI UR Nurse: Need clinical documentation to include ALL of the following: PT eval & re-eval, PT daily note(s) from PT provider as well as pertinent exam, H&P note, imaging/diagnostic studies, copy of PT referral from Dr. Kelly Armstrong corresponding to the billed date of service., \nDate: 2026-10-02, \nSource: EDW",
+      "template": "Analyst Template"
+    },
+    {
+      "clm_nbr": "85-00772716",
+      "topic": "Medical_Template",
+      "value": "Indicator: Use of unlisted/miscellaneous code 99199 on medical bills, \nEvidence: Requested 99199 - 99199 0,1 4/28/2025 4/28/2025 Physician 99199 - 99199 0,1 4/28/2025 4/28/2025 Denied MI41, \nDate: 2025-08-04, \nSource: EDW\n\n****************************************************\nIndicator: Providers submitting bills directly to claim rather than through Medata, \nEvidence: Billing from Behavior Center for Behavior Health, provider appears to keep sending dates of service directly to the claim instead of to Medata, however, some dates of service submitted appropriately. Returned for review DOS 6.01.2025-6.30.2025, \nDate: 2025-11-24, \nSource: EDW\n\n****************************************************\nIndicator: Charge description master / charge-master discrepancies causing denials and vendor complaints, \nEvidence: Provider advises they have submitted charge master to Medata multiple times for this claim and others, and is confused as why they have been paid on other Hanover/Citizens claims without issue, specifically for Attendant Care or Home Evaluations. Further noting that Impact Therapy was not in business in 2019, so the charge master they are submitting reflects current rates. Please review for allowable payment Charge Master attached for vendor complaint/review, \nDate: 2026-03-06, \nSource: EDW\n\n****************************************************\nIndicator: Missing CPT codes in liens preventing verification of billed amounts, \nEvidence: Unable to determine paid bills due to the CPT codes missing from the Lien., \nDate: 2025-09-16, \nSource: EDW\n\n****************************************************\nIndicator: Claim/bill processed under wrong claimant / duplicate processed in error (MCN processed under wrong clmt), \nEvidence: Medata Return MCN previously processed in error under wrong clmt-no payment made- denied as duplicate currently MCN: 2025092500245675AAUR05, \nDate: 2025-10-29, \nSource: EDW\n\n****************************************************\nIndicator: Incorrect provider identifier (999999) in provider record causing incorrect fee-schedule/markup, \nEvidence: In Provider RecordXXX-XX-XXXX is 999999. This is causing the system to only apply the standard markup of 190%., \nDate: 2026-06-11, \nSource: EDW\n\n****************************************************\nIndicator: Billed date of service that predates the motor vehicle accident, \nEvidence: there is a billed dated of service for 4/1/25 which pre-dates the motor vehicle accident., \nDate: 2025-08-04, \nSource: EDW",
+      "template": "Medical Template"
+    },
+    {
+      "clm_nbr": "85-00772716",
+      "topic": "Litigation",
+      "value": "Indicator: Demand for arbitration by plaintiff's counsel, \nEvidence: We received LOR from The Sam Bernstein Law Firm, atty is Paige Stiger @ 248-671-1610 (Email: pstiger@sambernstein.com) who represents Samantha Robinson, Laeth Robinson (minor), Hiram Robinson (minor) and Renly Robinson for UM/UIM and request a certified copy of the policy. They made a demand for arbitration., \nDate: 2025-04-29, \nSource: EDW\n\n****************************************************\nIndicator: Civil suit filed naming multiple defendants (Robinson v Miranda-Giron et al), \nEvidence: State of MI 17th Judicial district, circuit, county case 25-20482-NI issued 07-25-25, expiration 10-24-25 letter dated 07-31-25 ... Samantha Robinson v Gustavo Miranda- Giron Dynasty Wilson, Alicia Alessandrini and Citizens Ins Co of the Midwest, \nDate: 2025-08-04, \nSource: EDW\n\n****************************************************\nIndicator: Attorney representation churn / counsel withdrawal and replacement, \nEvidence: Received letter from Sam Bernsteins office indicating they no longer represent Samantha Robinson and all of her minor kids. They indicated her new attorney is: West MIchigan Injury Lawyers Loryn Schlinker 380 W Western Ave Suite 120 Muskegon, MI. 49440 PH# 231-725-8444, \nDate: 2025-05-28, \nSource: EDW\n\n****************************************************\nIndicator: Minor plaintiffs represented separately and pursuing claim against insured parent, \nEvidence: Samantha Robinson's minor children are represented by Michigan Auto law, they do not represent Samantha as they are bringing a claim against Samantha for failure to properly secure the children inside the vehicle causing injury., \nDate: 2025-09-24, \nSource: EDW\n\n****************************************************\nIndicator: Scheduled litigation events (deposit ions / discovery / mediation) documented, \nEvidence: We have the Co-Defendant's depositions scheduled for 7/16/26. Ms. Robinson's deposition is tentatively scheduled for the same day, but may be moved to another day. I sent out discovery asking Plaintiffs to admit that Hiram was seat belted, the claims at issue, and if Plaintiffs have any expert attributing Samantha Robinson's actions to the alleged damages., \nDate: 2026-05-06, \nSource: EDW\n\n****************************************************\nIndicator: Coverage/residency dispute escalated to SIU with affidavit and field visit, \nEvidence: We have since received a signed affidavit indicating that claimant and her children were living at the policy address but had rented an apartment temporarily in December due to the policy address being under construction. SIU referral >At this time sending referral to SIU for field visit. Need to determine if home is under construction per affidavit. Photos should be taken to confirm., \nDate: 2025-06-03, \nSource: EDW\n\n****************************************************\nIndicator: Multiple medical liens submitted and routed to MBR for handling, \nEvidence: Received lien from adjuster via MBRHELP box dated 9/10/25. Lien Company HICARRIER seeking $5933.41 for DOS 4/17/25 - 6/17/25. Payments were made in Medata. Responded with lien letter cc claimant advising HICARRIER to redirect providers to bill us directly for any auto accident-related charges., \nDate: 2025-09-16, \nSource: EDW",
+      "template": "Analyst Template"
+    }
+  ]
+}
+
+
+PAL SEVERITY: cts is giving []
+
+LITIGATION CLAIM RESPONSE:
+
+{
+  "claim_number": "85-00787748-03",
+  "edw": [
+    {
+      "Claim Feature Number": "85-00787748-03",
+      "Litigation Status": "Not in Litigation",
+      "Paid Amount": "0",
+      "Jurisdiction State": "NY",
+      "Litigation Primary Reason": "No info Available",
+      "Cause Of Loss": null,
+      "Major Peril Description": "Bi, Single Limit with Single Premium OR "
+    }
+  ],
+  "game_summary": [],
+  "game_summary_legacy": [
+    {
+      "DERIVE_CLM_FTR_NBR": "85-00787748-03",
+      "Topic": "Case Investigation",
+      "Summary": "Based on the provided claim notes, the following topics lead to a high probability of litigation:\n\n1. **Injury at scene**: The claimant, Dana Macchia, reported injuries including left side aching, back, neck, shoulder, and left hip. Injuries were noted at the scene and subsequent treatment has been sought at urgent care. The claimant is the only injured party identified.\n\n2. **Mechanism of injury**: The incident involved Vehicle #1 (insured driver) making a left turn from Bassett Road onto Hopkins Road and failing to yield the right of way, colliding with Vehicle #2 (claimant’s vehicle) traveling straight on Hopkins Road, causing direct impact to the left front of Vehicle #2.\n\n3. **Plaintiff's Attorney/ Law Firm**: The claimant is represented by Nicholas A. Romano, Esq., with paralegal Mary Barone at Connors LLP. The Law Office of Harriette G. Zelman is also involved in related subrogation matters.\n\n4. **Police report**: The police report confirms that the insured driver was cited for an illegal U-turn and failure to yield. The report notes conflicting statements but finds the insured 100% liable, which establishes legal fault relevant for litigation.\n\n5. **Body part injury**: Injuries are reported affecting multiple body parts: left arm, left side, back, neck, shoulder, and left hip of the claimant, indicating multi-area injury which heightens claim severity.\n\n6. **Driver**: The insured driver is Benedict Ferro. He was cited for the illegal U-turn and found fully liable for the accident. The claimant driver involved is Dana Macchia.\n\n7. **Vehicle**: The insured vehicle is a 2020 Mercedes (VIN 024253). The claimant’s vehicle details are less explicit but the damage was to the rear and left front panels. Damage is noted on both vehicles, confirming collision impact.\n\n8. **State**: The accident and related claim activities are under New York jurisdiction, with relevant New York statutes and subrogation rights invoked.\n\n9. **ISO**: The ISO classification for the claim was indicated with BI No claims open with OC. The claim was reassigned to the Bodily Injury (BI) queue reflecting bodily injury severity, suggesting insurance industry-level impact and monitoring.\n\n10. **Statute of Limitations**: New York’s 3-year statute of limitations applies, with the loss date clearly documented as May 14, 2025, well within the allowable period for filing litigation.\n\n11. **Medical treatment issues**: The claimant has ongoing treatment plans, initial urgent care receipts, follow-up appointments suggested, and PIP benefits claimed. The handling attorney is actively seeking medical status updates, highlighting possible disputes or future litigation over medical causation or sufficiency.\n\n12. **Venue**: The loss location is specified as Basset, Hopkins, Williamsville, NY. The venue is a New York jurisdiction consistent with policy underwriting and claim handling.\n\nThe following topics do not have sufficient or clear information to firmly place them under litigation potential but are noted:\n\n13. **Photographs**: The notes mention statements/photos as part of the plan of action but provide no detail on quality or content that might influence litigation.\n\n14. **Pre-existing conditions**: There is no mention or indication of claimant pre-existing medical conditions in the notes provided.\n\nThe key people involved in this claim are:\n\n1. Benedict Ferro – Insured driver and owner of the insured vehicle.\n2. Dana Macchia – Claimant and other party involved in the accident.\n3. Nicholas A. Romano, Esq. – Plaintiff’s attorney representing Dana Macchia.\n4. Mary Barone – Paralegal at Connors LLP assisting Nicholas Romano.\n5. Celia Dimitriades – Legal assistant representing New York Central Mutual Fire Insurance Company in subrogation matters.\n6. Amy Brennan – Adjuster involved in file handling and authorization requests.",
+      "Game_Run_Date": "2026-03-29",
+      "Word_Length": null,
+      "Claim Summary": "Based on the provided claim notes, the following topics lead to a high probability of litigation:\n\n1. Injury at scene: The claimant, Dana Macchia, reported injuries including left side aching, back, neck, shoulder, and left hip. Injuries were noted at the scene and subsequent treatment has been sought at urgent care. The claimant is the only injured party identified.\n\n2. Mechanism of injury: The incident involved Vehicle #1 (insured driver) making a left turn from Bassett Road onto Hopkins Road and failing to yield the right of way, colliding with Vehicle #2 (claimant’s vehicle) traveling straight on Hopkins Road, causing direct impact to the left front of Vehicle #2.\n\n3. Plaintiff's Attorney/ Law Firm: The claimant is represented by Nicholas A. Romano, Esq., with paralegal Mary Barone at Connors LLP. The Law Office of Harriette G. Zelman is also involved in related subrogation matters.\n\n4. Police report: The police report confirms that the insured driver was cited for an illegal U-turn and failure to yield. The report notes conflicting statements but finds the insured 100% liable, which establishes legal fault relevant for litigation.\n\n5. Body part injury: Injuries are reported affecting multiple body parts: left arm, left side, back, neck, shoulder, and left hip of the claimant, indicating multi-area injury which heightens claim severity.\n\n6. Driver: The insured driver is Benedict Ferro. He was cited for the illegal U-turn and found fully liable for the accident. The claimant driver involved is Dana Macchia.\n\n7. Vehicle: The insured vehicle is a 2020 Mercedes (VIN 024253). The claimant’s vehicle details are less explicit but the damage was to the rear and left front panels. Damage is noted on both vehicles, confirming collision impact.\n\n8. State: The accident and related claim activities are under New York jurisdiction, with relevant New York statutes and subrogation rights invoked.\n\n9. ISO: The ISO classification for the claim was indicated with BI No claims open with OC. The claim was reassigned to the Bodily Injury (BI) queue reflecting bodily injury severity, suggesting insurance industry-level impact and monitoring.\n\n10. Statute of Limitations: New York’s 3-year statute of limitations applies, with the loss date clearly documented as May 14, 2025, well within the allowable period for filing litigation.\n\n11. Medical treatment issues: The claimant has ongoing treatment plans, initial urgent care receipts, follow-up appointments suggested, and PIP benefits claimed. The handling attorney is actively seeking medical status updates, highlighting possible disputes or future litigation over medical causation or sufficiency.\n\n12. Venue: The loss location is specified as Basset, Hopkins, Williamsville, NY. The venue is a New York jurisdiction consistent with policy underwriting and claim handling.\n\nThe following topics do not have sufficient or clear information to firmly place them under litigation potential but are noted:\n\n13. Photographs: The notes mention statements/photos as part of the plan of action but provide no detail on quality or content that might influence litigation.\n\n14. Pre-existing conditions: There is no mention or indication of claimant pre-existing medical conditions in the notes provided.\n\nThe key people involved in this claim are:\n\n1. Benedict Ferro – Insured driver and owner of the insured vehicle.\n2. Dana Macchia – Claimant and other party involved in the accident.\n3. Nicholas A. Romano, Esq. – Plaintiff’s attorney representing Dana Macchia.\n4. Mary Barone – Paralegal at Connors LLP assisting Nicholas Romano.\n5. Celia Dimitriades – Legal assistant representing New York Central Mutual Fire Insurance Company in subrogation matters.\n6. Amy Brennan – Adjuster involved in file handling and authorization requests."
+    }
+  ]
+}
+
+LITIGATION LAW FIRM::
+
+{
+  "law_firm_name": "Schmidt Kramer PC",
+  "kpis": {
+    "claim_count": 2,
+    "legal_matter_count": 2,
+    "legal_matter_open_count": 1,
+    "settlement_percentage": 50,
+    "trial_percentage": 0,
+    "litigation_open_percentage": 50,
+    "litigation_duration_days": null,
+    "claim_duration_days": null
+  },
+  "claim_info": [
+    {
+      "PLNTF_ATTY_LAW_FIRM_NM": "Schmidt Kramer PC",
+      "CLM_NBR_U": "83-00078640",
+      "CLM_FTR_NBR_U": "01",
+      "DERIVE_CLM_FTR_NBR_U": "83-00078640-01",
+      "MATTER_HCS_SYS_ID": "cc:583417",
+      "FTR_CREAT_DT_U": "2021-02-10 00:00:00.0000000",
+      "FTR_CLOSE_DT_U": "2022-03-16 00:00:00.0000000",
+      "CLM_RPTD_DT_U": "2021-02-10 00:00:00.0000000",
+      "CLM_CLOSE_DT_U": "2022-03-16 00:00:00.0000000",
+      "LGL_MATTER_OPEN_DT": "2021-09-18 00:00:00.0000000",
+      "LAWSUIT_CLOSE_DT": "2022-03-16 00:00:00.0000000",
+      "LAWSUIT_CASE_NBR": null,
+      "ATTY_ACTVTY_RESLTN_DESC": "Settled during Discovery",
+      "LAWSUIT_FINL_STTLMT_AMT": "67500",
+      "CLM_JRSDTN_ST_ABBR": "PA",
+      "HCS_POL_LOB_DESC": "Workers' comp",
+      "Feature_PIP_Indicator": 0
+    },
+    {
+      "PLNTF_ATTY_LAW_FIRM_NM": "Schmidt Kramer PC",
+      "CLM_NBR_U": "85-00464076",
+      "CLM_FTR_NBR_U": "01",
+      "DERIVE_CLM_FTR_NBR_U": "85-00464076-01",
+      "MATTER_HCS_SYS_ID": "ccxp:245555",
+      "FTR_CREAT_DT_U": "2023-10-03 00:00:00.0000000",
+      "FTR_CLOSE_DT_U": null,
+      "CLM_RPTD_DT_U": "2023-09-19 00:00:00.0000000",
+      "CLM_CLOSE_DT_U": null,
+      "LGL_MATTER_OPEN_DT": "2024-06-10 00:00:00.0000000",
+      "LAWSUIT_CLOSE_DT": null,
+      "LAWSUIT_CASE_NBR": null,
+      "ATTY_ACTVTY_RESLTN_DESC": " ",
+      "LAWSUIT_FINL_STTLMT_AMT": null,
+      "CLM_JRSDTN_ST_ABBR": "PA",
+      "HCS_POL_LOB_DESC": "Commercial liability",
+      "Feature_PIP_Indicator": 0
+    }
+  ],
+  "notes": [],
+  "resolution_counts": [
+    {
+      "value": " ",
+      "count": 1
+    },
+    {
+      "value": "Settled during Discovery",
+      "count": 1
+    }
+  ],
+  "settlement_bins": [
+    {
+      "value": "NA",
+      "count": 1
+    },
+    {
+      "value": "<$1K",
+      "count": 0
+    },
+    {
+      "value": "$1K-$10K",
+      "count": 0
+    },
+    {
+      "value": "$10K-$50K",
+      "count": 0
+    },
+    {
+      "value": "$50K-$100K",
+      "count": 1
+    },
+    {
+      "value": "$100K-$250K",
+      "count": 0
+    },
+    {
+      "value": ">$250K",
+      "count": 0
+    }
+  ],
+  "line_of_business_counts": [
+    {
+      "value": "Commercial liability",
+      "count": 1
+    },
+    {
+      "value": "Workers' comp",
+      "count": 1
+    }
+  ],
+  "jurisdiction_counts": [
+    {
+      "value": "PA",
+      "count": 2
+    }
+  ],
+  "annual_rates": []
+}
