@@ -135,7 +135,7 @@ def test_sql_splits_short_litigation_claim_and_feature_example(sql_source):
 
 def with_filter_keys(model, recommendation):
     return {
-        **{key: None for key, _ in service.FILTER_FIELDS[model]},
+        **{key: None for key, _ in service.FILTER_POSITIONS[model]},
         **recommendation,
     }
 
@@ -268,34 +268,35 @@ def test_api_returns_each_models_filter_values_on_its_own_row(
     claim = response.json()[0]
     assert claim["fraud"] == [{
         "Predictions": "High", "Action": "Review — Refer to analyst",
-        "referralMechanism": "Manual", "ctsStatus": "Y", "user": "Analyst A",
-        "carpeStatus": "N", "lowImpact": 125.5, "iesFlag": "Y",
+        "REFERRAL_MECHANISM": "Manual", "CTS_TABLE": "Y", "ANALYST_NAME": "Analyst A",
+        "CARPE_STATUS": "N", "low_apd_pay": 125.5, "IES_FLAG": "Y",
     }]
     assert claim["litigation"] == [{
         "Predictions": "Low", "Action": "Monitor — Await documents", "Feature": "02",
-        "unitManager": "Manager L", "adjuster": "Adjuster L", "action": "Monitor",
-        "newUpdates": "No", "reviewed": "True", "predictedByModel": "Yes",
-        "reviewedInSeverity": "No",
+        "MANAGER_FULL_NM": "Manager L", "ADJUSTER_FULL_NM": "Adjuster L",
+        "Action_Raw": "Monitor", "New_Updates": "No", "Addressed": "True",
+        "Litigation_Pred_By_Model": "Yes", "SEVERITY_REVIEWED": "No",
     }]
     assert claim["severity"] == [
         {
             "Predictions": "High", "Action": "Review — Raise reserve",
-            "unitManager": "Manager S", "adjuster": "Adjuster S", "action": "Review",
-            "newUpdates": "Yes", "reserveThreshold": "< $75000",
-            "reserveChange": "10%-20%",
+            "MANAGER_FULL_NM": "Manager S", "ADJUSTER_FULL_NM": "Adjuster S",
+            "Action_Raw": "Review", "New_Updates": "Yes",
+            "Threshold_Filter": "< $75000", "Percentage_Bucket": "10%-20%",
         },
         {
             "Predictions": "Low", "Action": None,
-            "unitManager": None, "adjuster": None, "action": None,
-            "newUpdates": None, "reserveThreshold": ">= $75000",
-            "reserveChange": None,
+            "MANAGER_FULL_NM": None, "ADJUSTER_FULL_NM": None,
+            "Action_Raw": None, "New_Updates": None,
+            "Threshold_Filter": ">= $75000", "Percentage_Bucket": None,
         },
     ]
     assert claim["subrogation"] == [{
         "Predictions": "Low", "Action": "Pending",
-        "assignActMgr": "Manager A", "accidentState": "NY", "paymentMade": "No",
-        "histSubroGrpAssign": "Yes", "subjectText": "Recovery review",
-        "crrAssignGrpName": "Subrogation", "reviewStatus": "Pending",
+        "ACT_ASGNED_USER_FULL_NM": "Manager A", "State_Group": "NY",
+        "PAID_FINAL_IND": "No", "Subro_hist_flag": "Yes",
+        "SUBJ_TXT": "Recovery review", "SubroGroup_IND": "Subrogation",
+        "Status": "Pending",
     }]
 
 
@@ -368,24 +369,26 @@ def test_grouping_keeps_model_records_separate_and_preserves_duplicates(sql_sour
                     "Feature": "01",
                     "Predictions": "High",
                     "Action": "Action A — Details A",
-                    "action": "Action A",
+                    "Action_Raw": "Action A",
                 }),
                 with_filter_keys("litigation", {
-                    "Feature": "02", "Predictions": "Low", "Action": "Action B", "action": "Action B"
+                    "Feature": "02", "Predictions": "Low", "Action": "Action B",
+                    "Action_Raw": "Action B"
                 }),
                 with_filter_keys("litigation", {
-                    "Feature": "02", "Predictions": "Low", "Action": "Action B", "action": "Action B"
+                    "Feature": "02", "Predictions": "Low", "Action": "Action B",
+                    "Action_Raw": "Action B"
                 }),
             ],
             "severity": [
                 with_filter_keys("severity", {
-                    "Predictions": "High", "Action": "Settle", "action": "Settle"
+                    "Predictions": "High", "Action": "Settle", "Action_Raw": "Settle"
                 }),
                 with_filter_keys("severity", {"Predictions": "Low", "Action": None}),
             ],
             "subrogation": [with_filter_keys(
                 "subrogation", {
-                    "Predictions": "High", "Action": "Assigned", "reviewStatus": "Assigned"
+                    "Predictions": "High", "Action": "Assigned", "Status": "Assigned"
                 }
             )],
         },

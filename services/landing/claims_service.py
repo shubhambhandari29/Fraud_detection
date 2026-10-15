@@ -15,8 +15,10 @@ from db import db_connection
 logger = logging.getLogger(__name__)
 MODELS = ("fraud", "litigation", "severity", "subrogation")
 
-# UI filter keys and their selector-table columns. Keep the keys in the landing
-# response; SQL aliases are model-qualified so UNION ALL preserves native types.
+# UI filter mapping and selector-table columns. The landing response uses the
+# actual DB column name, except raw Action (Action_Raw) because the existing
+# Action key contains combined display text. SQL aliases are model-qualified
+# so UNION ALL keeps each filter column's native type distinct.
 FILTER_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
     "fraud": (
         ("referralMechanism", "REFERRAL_MECHANISM"),
@@ -60,8 +62,8 @@ FILTER_COLUMNS = tuple(
 )
 FILTER_POSITIONS = {
     model: tuple(
-        (key, index)
-        for index, (source_model, key, _, _) in enumerate(FILTER_COLUMNS)
+        ("Action_Raw" if column == "Action" else column, index)
+        for index, (source_model, _, column, _) in enumerate(FILTER_COLUMNS)
         if source_model == model
     )
     for model in MODELS

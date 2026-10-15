@@ -11,42 +11,42 @@ class ModelRecommendation(BaseModel):
 
 
 class FraudRecommendation(ModelRecommendation):
-    referralMechanism: Any = None
-    ctsStatus: Any = None
-    user: Any = None
-    carpeStatus: Any = None
-    lowImpact: Any = None
-    iesFlag: Any = None
+    REFERRAL_MECHANISM: Any = None
+    CTS_TABLE: Any = None
+    ANALYST_NAME: Any = None
+    CARPE_STATUS: Any = None
+    low_apd_pay: Any = None
+    IES_FLAG: Any = None
 
 
 class LitigationRecommendation(ModelRecommendation):
     Feature: str
-    unitManager: Any = None
-    adjuster: Any = None
-    action: Any = None
-    newUpdates: Any = None
-    reviewed: Any = None
-    predictedByModel: Any = None
-    reviewedInSeverity: Any = None
+    MANAGER_FULL_NM: Any = None
+    ADJUSTER_FULL_NM: Any = None
+    Action_Raw: Any = None
+    New_Updates: Any = None
+    Addressed: Any = None
+    Litigation_Pred_By_Model: Any = None
+    SEVERITY_REVIEWED: Any = None
 
 
 class SeverityRecommendation(ModelRecommendation):
-    unitManager: Any = None
-    adjuster: Any = None
-    action: Any = None
-    newUpdates: Any = None
-    reserveThreshold: Any = None
-    reserveChange: Any = None
+    MANAGER_FULL_NM: Any = None
+    ADJUSTER_FULL_NM: Any = None
+    Action_Raw: Any = None
+    New_Updates: Any = None
+    Threshold_Filter: Any = None
+    Percentage_Bucket: Any = None
 
 
 class SubrogationRecommendation(ModelRecommendation):
-    assignActMgr: Any = None
-    accidentState: Any = None
-    paymentMade: Any = None
-    histSubroGrpAssign: Any = None
-    subjectText: Any = None
-    crrAssignGrpName: Any = None
-    reviewStatus: Any = None
+    ACT_ASGNED_USER_FULL_NM: Any = None
+    State_Group: Any = None
+    PAID_FINAL_IND: Any = None
+    Subro_hist_flag: Any = None
+    SUBJ_TXT: Any = None
+    SubroGroup_IND: Any = None
+    Status: Any = None
 
 
 class LandingClaim(BaseModel):

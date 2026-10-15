@@ -30,20 +30,21 @@ entries also contain the two-character `Feature` suffix from
 exists for that model; a null field means a record exists but that field is empty.
 If there are no selected records anywhere, the endpoint returns `[]`.
 
-Each model entry also includes these UI filter keys, populated from the same
-selector-table row as its prediction and action:
+Each model entry also includes these selector-column names as filter keys,
+populated from the same row as its prediction and action:
 
-| Model | UI key → selector column |
+| Model | Additional response keys |
 | --- | --- |
-| fraud | `referralMechanism` → `REFERRAL_MECHANISM`; `ctsStatus` → `CTS_TABLE`; `user` → `ANALYST_NAME`; `carpeStatus` → `CARPE_STATUS`; `lowImpact` → `low_apd_pay`; `iesFlag` → `IES_FLAG` |
-| litigation | `unitManager` → `MANAGER_FULL_NM`; `adjuster` → `ADJUSTER_FULL_NM`; `action` → `Action`; `newUpdates` → `New_Updates`; `reviewed` → `Addressed`; `predictedByModel` → `Litigation_Pred_By_Model`; `reviewedInSeverity` → `SEVERITY_REVIEWED` |
-| severity | `unitManager` → `MANAGER_FULL_NM`; `adjuster` → `ADJUSTER_FULL_NM`; `action` → `Action`; `newUpdates` → `New_Updates`; `reserveThreshold` → `Threshold_Filter`; `reserveChange` → `Percentage_Bucket` |
-| subrogation | `assignActMgr` → `ACT_ASGNED_USER_FULL_NM`; `accidentState` → `State_Group`; `paymentMade` → `PAID_FINAL_IND`; `histSubroGrpAssign` → `Subro_hist_flag`; `subjectText` → `SUBJ_TXT`; `crrAssignGrpName` → `SubroGroup_IND`; `reviewStatus` → `Status` |
+| fraud | `REFERRAL_MECHANISM`, `CTS_TABLE`, `ANALYST_NAME`, `CARPE_STATUS`, `low_apd_pay`, `IES_FLAG` |
+| litigation | `MANAGER_FULL_NM`, `ADJUSTER_FULL_NM`, `Action_Raw`, `New_Updates`, `Addressed`, `Litigation_Pred_By_Model`, `SEVERITY_REVIEWED` |
+| severity | `MANAGER_FULL_NM`, `ADJUSTER_FULL_NM`, `Action_Raw`, `New_Updates`, `Threshold_Filter`, `Percentage_Bucket` |
+| subrogation | `ACT_ASGNED_USER_FULL_NM`, `State_Group`, `PAID_FINAL_IND`, `Subro_hist_flag`, `SUBJ_TXT`, `SubroGroup_IND`, `Status` |
 
 Missing source values remain JSON `null`. The original uppercase `Action` remains
-the combined display text; lowercase `action` is the raw Litigation or Severity
-field, and Subrogation `reviewStatus` is its raw `Status`. Existing `Selected = 1`
-inclusion and prediction normalization rules are unchanged.
+the combined display text. `Action_Raw` contains the raw Litigation or Severity
+`Action` column, which would otherwise collide with the display key. Subrogation
+`Status` is its raw status. Existing `Selected = 1` inclusion and prediction
+normalization rules are unchanged.
 
 | Model | Claim column | Prediction column | Action components |
 | --- | --- | --- | --- |
