@@ -15,15 +15,79 @@ from db import db_connection
 logger = logging.getLogger(__name__)
 MODELS = ("fraud", "litigation", "severity", "subrogation")
 
+# UI filter keys and their selector-table columns. Keep the keys in the landing
+# response; SQL aliases are model-qualified so UNION ALL preserves native types.
+FILTER_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
+    "fraud": (
+        ("referralMechanism", "REFERRAL_MECHANISM"),
+        ("ctsStatus", "CTS_TABLE"),
+        ("user", "ANALYST_NAME"),
+        ("carpeStatus", "CARPE_STATUS"),
+        ("lowImpact", "low_apd_pay"),
+        ("iesFlag", "IES_FLAG"),
+    ),
+    "litigation": (
+        ("unitManager", "MANAGER_FULL_NM"),
+        ("adjuster", "ADJUSTER_FULL_NM"),
+        ("action", "Action"),
+        ("newUpdates", "New_Updates"),
+        ("reviewed", "Addressed"),
+        ("predictedByModel", "Litigation_Pred_By_Model"),
+        ("reviewedInSeverity", "SEVERITY_REVIEWED"),
+    ),
+    "severity": (
+        ("unitManager", "MANAGER_FULL_NM"),
+        ("adjuster", "ADJUSTER_FULL_NM"),
+        ("action", "Action"),
+        ("newUpdates", "New_Updates"),
+        ("reserveThreshold", "Threshold_Filter"),
+        ("reserveChange", "Percentage_Bucket"),
+    ),
+    "subrogation": (
+        ("assignActMgr", "ACT_ASGNED_USER_FULL_NM"),
+        ("accidentState", "State_Group"),
+        ("paymentMade", "PAID_FINAL_IND"),
+        ("histSubroGrpAssign", "Subro_hist_flag"),
+        ("subjectText", "SUBJ_TXT"),
+        ("crrAssignGrpName", "SubroGroup_IND"),
+        ("reviewStatus", "Status"),
+    ),
+}
+FILTER_COLUMNS = tuple(
+    (model, key, column, f"{model}_{key}")
+    for model, fields in FILTER_FIELDS.items()
+    for key, column in fields
+)
+FILTER_POSITIONS = {
+    model: tuple(
+        (key, index)
+        for index, (source_model, key, _, _) in enumerate(FILTER_COLUMNS)
+        if source_model == model
+    )
+    for model in MODELS
+}
+
+
+def _source_filter_columns(model: str) -> str:
+    """Project all filter slots, populating only this model's slots."""
+    return ",\n           ".join(
+        f"[{column}] AS [{alias}]" if source_model == model else f"NULL AS [{alias}]"
+        for source_model, _, column, alias in FILTER_COLUMNS
+    )
+
+
+FILTER_PASS_THROUGH = ",\n           ".join(f"[{alias}]" for _, _, _, alias in FILTER_COLUMNS)
+
 # UNION ALL retains every source record. Python groups these rows by claim;
 # predictions/actions are never deduplicated or aggregated.
-NORMALIZED_ROWS_CTE = """
+NORMALIZED_ROWS_CTE = f"""
 WITH source_rows AS (
     SELECT N'fraud' AS model,
            CAST([CLM_NBR] AS nvarchar(450)) AS raw_claim_number,
            CAST([ML_PREDICTIONS] AS nvarchar(max)) AS raw_prediction,
            CAST([Status] AS nvarchar(max)) AS raw_action,
-           CAST([Feedback] AS nvarchar(max)) AS raw_details
+           CAST([Feedback] AS nvarchar(max)) AS raw_details,
+           {_source_filter_columns("fraud")}
     FROM [dbo].[tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector]
     WHERE [Selected] = ?
     UNION ALL
@@ -31,7 +95,8 @@ WITH source_rows AS (
            CAST([DERIVE_CLM_FTR_NBR] AS nvarchar(450)),
            CAST([PREDICTIONS] AS nvarchar(max)),
            CAST([Action] AS nvarchar(max)),
-           CAST([ACTION_DETAILS] AS nvarchar(max))
+           CAST([ACTION_DETAILS] AS nvarchar(max)),
+           {_source_filter_columns("litigation")}
     FROM [dbo].[tblALLitigation_OpenClaimsPredictions_Selector]
     WHERE [Selected] = ?
     UNION ALL
@@ -39,7 +104,8 @@ WITH source_rows AS (
            CAST([CLM_NBR] AS nvarchar(450)),
            CAST([PREDICTIONS] AS nvarchar(max)),
            CAST([Action] AS nvarchar(max)),
-           CAST([ACTION_DETAILS] AS nvarchar(max))
+           CAST([ACTION_DETAILS] AS nvarchar(max)),
+           {_source_filter_columns("severity")}
     FROM [dbo].[tblPALSeverity_OpenClaimsPredictions_Selector_GAME]
     WHERE [Selected] = ?
     UNION ALL
@@ -47,7 +113,8 @@ WITH source_rows AS (
            CAST([CLM_NBR_U] AS nvarchar(450)),
            CAST([PREDICTIONS] AS nvarchar(max)),
            CAST([Status] AS nvarchar(max)),
-           CAST(NULL AS nvarchar(max))
+           CAST(NULL AS nvarchar(max)),
+           {_source_filter_columns("subrogation")}
     FROM [dbo].[tblAutoSubro_combinedOpenClaimsPredictions_Selector]
     WHERE [Selected] = ?
 ), trimmed_rows AS (
@@ -55,7 +122,8 @@ WITH source_rows AS (
            LTRIM(RTRIM(raw_claim_number)) AS raw_claim_number,
            LOWER(LTRIM(RTRIM(raw_prediction))) AS raw_prediction,
            NULLIF(LTRIM(RTRIM(raw_action)), N'') AS raw_action,
-           NULLIF(LTRIM(RTRIM(raw_details)), N'') AS raw_details
+           NULLIF(LTRIM(RTRIM(raw_details)), N'') AS raw_details,
+           {FILTER_PASS_THROUGH}
     FROM source_rows
 ), cleaned_rows AS (
     SELECT model,
@@ -72,7 +140,8 @@ WITH source_rows AS (
                  CHARINDEX(N':', raw_prediction) + 1,
                  LEN(raw_prediction)))) AS prediction_label,
            CASE WHEN LOWER(raw_action) = N'null' THEN NULL ELSE raw_action END AS action_text,
-           CASE WHEN LOWER(raw_details) = N'null' THEN NULL ELSE raw_details END AS details_text
+           CASE WHEN LOWER(raw_details) = N'null' THEN NULL ELSE raw_details END AS details_text,
+           {FILTER_PASS_THROUGH}
     FROM trimmed_rows
 ), normalized_rows AS (
     SELECT model, claim_number, feature_number,
@@ -81,15 +150,17 @@ WITH source_rows AS (
                                  ELSE NULL END AS [Predictions],
            CASE WHEN action_text IS NULL THEN details_text
                 WHEN details_text IS NULL THEN action_text
-                ELSE action_text + N' — ' + details_text END AS [Action]
+                ELSE action_text + N' — ' + details_text END AS [Action],
+           {FILTER_PASS_THROUGH}
     FROM cleaned_rows
 )
 """
 
 # Reference the normalized rows once, with one global sort. This replaces the
 # four correlated JSON subqueries per claim and preserves SQL's ordering rules.
-LANDING_QUERY = NORMALIZED_ROWS_CTE + """
-SELECT model, claim_number, feature_number, [Predictions], [Action]
+LANDING_QUERY = NORMALIZED_ROWS_CTE + f"""
+SELECT model, claim_number, feature_number, [Predictions], [Action],
+       {FILTER_PASS_THROUGH}
 FROM normalized_rows
 ORDER BY claim_number, model, feature_number, [Predictions], [Action];
 """
@@ -98,15 +169,21 @@ ORDER BY claim_number, model, feature_number, [Predictions], [Action];
 def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
     """Collect rows in one pass, preserving duplicates and prediction/action pairs."""
     claims: dict[str, dict[str, Any]] = {}
-    for model, claim_number, feature, prediction, action in rows:
+    for row in rows:
+        model, claim_number, feature, prediction, action, *filter_values = row
         if model not in MODELS:
             raise ValueError(f"Unexpected landing model: {model}")
+        if len(filter_values) != len(FILTER_COLUMNS):
+            raise ValueError("Landing row has an unexpected filter column count")
         if claim_number not in claims:
             claims[claim_number] = {
                 "claim_number": claim_number,
                 **{name: [] for name in MODELS},
             }
         recommendation = {"Predictions": prediction, "Action": action}
+        recommendation.update(
+            {key: filter_values[index] for key, index in FILTER_POSITIONS[model]}
+        )
         if model == "litigation":
             if feature is None:
                 raise ValueError("Litigation landing row is missing its feature")

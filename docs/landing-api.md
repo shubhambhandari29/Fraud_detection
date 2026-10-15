@@ -20,12 +20,30 @@ addressed claims remain included. Results are ordered by claim number.
 ]
 ```
 
+The example above omits the model-specific filter fields for brevity; every
+populated model entry includes its corresponding keys below.
+
 Each model array preserves every selected source row, including identical entries.
 Predictions and actions from the same source row stay in the same object. Litigation
 entries also contain the two-character `Feature` suffix from
 `DERIVE_CLM_FTR_NBR`; no database IDs appear. An empty array means no selected record
 exists for that model; a null field means a record exists but that field is empty.
 If there are no selected records anywhere, the endpoint returns `[]`.
+
+Each model entry also includes these UI filter keys, populated from the same
+selector-table row as its prediction and action:
+
+| Model | UI key → selector column |
+| --- | --- |
+| fraud | `referralMechanism` → `REFERRAL_MECHANISM`; `ctsStatus` → `CTS_TABLE`; `user` → `ANALYST_NAME`; `carpeStatus` → `CARPE_STATUS`; `lowImpact` → `low_apd_pay`; `iesFlag` → `IES_FLAG` |
+| litigation | `unitManager` → `MANAGER_FULL_NM`; `adjuster` → `ADJUSTER_FULL_NM`; `action` → `Action`; `newUpdates` → `New_Updates`; `reviewed` → `Addressed`; `predictedByModel` → `Litigation_Pred_By_Model`; `reviewedInSeverity` → `SEVERITY_REVIEWED` |
+| severity | `unitManager` → `MANAGER_FULL_NM`; `adjuster` → `ADJUSTER_FULL_NM`; `action` → `Action`; `newUpdates` → `New_Updates`; `reserveThreshold` → `Threshold_Filter`; `reserveChange` → `Percentage_Bucket` |
+| subrogation | `assignActMgr` → `ACT_ASGNED_USER_FULL_NM`; `accidentState` → `State_Group`; `paymentMade` → `PAID_FINAL_IND`; `histSubroGrpAssign` → `Subro_hist_flag`; `subjectText` → `SUBJ_TXT`; `crrAssignGrpName` → `SubroGroup_IND`; `reviewStatus` → `Status` |
+
+Missing source values remain JSON `null`. The original uppercase `Action` remains
+the combined display text; lowercase `action` is the raw Litigation or Severity
+field, and Subrogation `reviewStatus` is its raw `Status`. Existing `Selected = 1`
+inclusion and prediction normalization rules are unchanged.
 
 | Model | Claim column | Prediction column | Action components |
 | --- | --- | --- | --- |
