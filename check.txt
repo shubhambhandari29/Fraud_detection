@@ -1,45 +1,84 @@
-SELECT 'fraud' AS model,
-       CAST(CLM_NBR AS nvarchar(450)) AS source_claim_number,
-       CAST(Selected AS int) AS selected,
-       CAST(ML_PREDICTIONS AS nvarchar(max)) AS raw_prediction,
-       CAST([Status] AS nvarchar(max)) AS action,
-       CAST(Feedback AS nvarchar(max)) AS action_details
-FROM dbo.tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector
-WHERE CLM_NBR IN ('15-00885518', '15-00952355')
+fraud: {
 
-UNION ALL
+    dbFields: {
 
-SELECT 'litigation',
-       CAST(DERIVE_CLM_FTR_NBR AS nvarchar(450)),
-       CAST(Selected AS int),
-       CAST(PREDICTIONS AS nvarchar(max)),
-       CAST([Action] AS nvarchar(max)),
-       CAST(ACTION_DETAILS AS nvarchar(max))
-FROM dbo.tblALLitigation_OpenClaimsPredictions_Selector
-WHERE DERIVE_CLM_FTR_NBR IN ('15-00885518', '15-00952355')
-   OR DERIVE_CLM_FTR_NBR LIKE '15-00885518-%'
-   OR DERIVE_CLM_FTR_NBR LIKE '15-00952355-%'
+      referralMechanism: "REFERRAL_MECHANISM",
 
-UNION ALL
+      ctsStatus: "CTS_TABLE",
 
-SELECT 'severity',
-       CAST(CLM_NBR AS nvarchar(450)),
-       CAST(Selected AS int),
-       CAST(PREDICTIONS AS nvarchar(max)),
-       CAST([Action] AS nvarchar(max)),
-       CAST(ACTION_DETAILS AS nvarchar(max))
-FROM dbo.tblPALSeverity_OpenClaimsPredictions_Selector_GAME
-WHERE CLM_NBR IN ('15-00885518', '15-00952355')
+      user: "ANALYST_NAME",
 
-UNION ALL
+      carpeStatus: "CARPE_STATUS",
 
-SELECT 'subrogation',
-       CAST(CLM_NBR_U AS nvarchar(450)),
-       CAST(Selected AS int),
-       CAST(PREDICTIONS AS nvarchar(max)),
-       CAST([Status] AS nvarchar(max)),
-       CAST(NULL AS nvarchar(max))
-FROM dbo.tblAutoSubro_combinedOpenClaimsPredictions_Selector
-WHERE CLM_NBR_U IN ('15-00885518', '15-00952355')
+      lowImpact: "low_apd_pay",
 
-ORDER BY source_claim_number, model, selected;
+      iesFlag: "IES_FLAG",
+
+    },
+
+  },
+
+  litigation: {
+
+    dbFields: {
+
+      unitManager: "MANAGER_FULL_NM",
+
+      adjuster: "ADJUSTER_FULL_NM",
+
+      action: "Action",
+
+      newUpdates: "New_Updates",
+
+      reviewed: "Addressed",
+
+      predictedByModel: "Litigation_Pred_By_Model",
+
+      reviewedInSeverity: "SEVERITY_REVIEWED",
+
+    },
+
+  },
+
+  severity: {
+
+    dbFields: {
+
+      unitManager: "MANAGER_FULL_NM",
+
+      adjuster: "ADJUSTER_FULL_NM",
+
+      action: "Action",
+
+      newUpdates: "New_Updates",
+
+      reserveThreshold: "Threshold_Filter",
+
+      reserveChange: "Percentage_Bucket",
+
+    },
+
+  },
+
+  subrogation: {
+
+    dbFields: {
+
+      assignActMgr: "ACT_ASGNED_USER_FULL_NM",
+
+      accidentState: "State_Group",
+
+      paymentMade: "PAID_FINAL_IND",
+
+      histSubroGrpAssign: "Subro_hist_flag",
+
+      subjectText: "SUBJ_TXT",
+
+      crrAssignGrpName: "SubroGroup_IND",
+
+      reviewStatus: "Status",
+
+    },
+
+  },
+ 
