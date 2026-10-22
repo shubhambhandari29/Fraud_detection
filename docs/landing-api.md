@@ -1,50 +1,57 @@
 # Combined claims landing page
 
-`GET /landing/` uses the same authenticated session cookie as the existing model APIs.
-It returns a JSON array with one object per normalized claim number. There are no
-required query parameters. Every table is filtered only by `Selected = 1`;
-addressed claims remain included. Results are ordered by claim number.
+`GET /landing/` uses the existing authenticated session cookie. It has no
+required query parameters. The four selector tables are filtered only by
+`Selected = 1`; addressed rows are still included. An empty result is `{}`.
+
+The response is a JSON object keyed by normalized claim number. If a claim has
+multiple rows in any model, its keys gain one-based suffixes (`_1`, `_2`, etc.).
+A claim with only one combined row has no suffix. Every value is a flat object
+with all 35 fields defined by `FlatLandingClaim`; the original field name is
+prefixed with `Fraud_`, `Litigation_`, `Severity_`, or `Subro_`.
 
 ```json
-[
-  {
-    "claim_number": "85-00837106",
-    "fraud": [{"Predictions": "High", "Action": "Status — Feedback"}],
-    "litigation": [
-      {"Feature": "01", "Predictions": "High", "Action": "Action A — Details A"},
-      {"Feature": "02", "Predictions": "Low", "Action": null}
-    ],
-    "severity": [],
-    "subrogation": [{"Predictions": "High", "Action": "Assigned"}]
+{
+  "85-00837106_1": {
+    "Fraud_Predictions": "High",
+    "Fraud_Action": "Review — Refer to analyst",
+    "Litigation_Predictions": "High",
+    "Litigation_Action": "Review — Attorney involved",
+    "Litigation_Feature": "01",
+    "Severity_Predictions": "Low",
+    "Severity_Action": null,
+    "Subro_Predictions": "High",
+    "Subro_Action": "Assigned"
+  },
+  "85-00837106_2": {
+    "Fraud_Predictions": "Low",
+    "Fraud_Action": null,
+    "Litigation_Predictions": "Low",
+    "Litigation_Action": "Monitor",
+    "Litigation_Feature": "02",
+    "Severity_Predictions": "Low",
+    "Severity_Action": null,
+    "Subro_Predictions": "Low",
+    "Subro_Action": null
   }
-]
+}
 ```
 
-The example above omits the model-specific filter fields for brevity; every
-populated model entry includes its corresponding keys below.
+The example omits the other filter fields for readability; the actual response
+always includes every field. Missing non-prediction values are JSON `null`, not
+the string `"null"`. Every prediction is `"High"` or `"Low"`: a missing model,
+blank prediction, unrecognized prediction, or explicit low value becomes
+`"Low"`. Only a normalized high value becomes `"High"`.
 
-Each model array preserves every selected source row, including identical entries.
-Predictions and actions from the same source row stay in the same object. Litigation
-entries also contain the two-character `Feature` suffix from
-`DERIVE_CLM_FTR_NBR`; no database IDs appear. An empty array means no selected record
-exists for that model; a null field means a record exists but that field is empty.
-If there are no selected records anywhere, the endpoint returns `[]`.
-
-Each model entry also includes these selector-column names as filter keys,
-populated from the same row as its prediction and action:
-
-| Model | Additional response keys |
-| --- | --- |
-| fraud | `REFERRAL_MECHANISM`, `CTS_TABLE`, `ANALYST_NAME`, `CARPE_STATUS`, `low_apd_pay`, `IES_FLAG` |
-| litigation | `MANAGER_FULL_NM`, `ADJUSTER_FULL_NM`, `Action_Raw`, `New_Updates`, `Addressed`, `Litigation_Pred_By_Model`, `SEVERITY_REVIEWED` |
-| severity | `MANAGER_FULL_NM`, `ADJUSTER_FULL_NM`, `Action_Raw`, `New_Updates`, `Threshold_Filter`, `Percentage_Bucket` |
-| subrogation | `ACT_ASGNED_USER_FULL_NM`, `State_Group`, `PAID_FINAL_IND`, `Subro_hist_flag`, `SUBJ_TXT`, `SubroGroup_IND`, `Status` |
-
-Missing source values remain JSON `null`. The original uppercase `Action` remains
-the combined display text. `Action_Raw` contains the raw Litigation or Severity
-`Action` column, which would otherwise collide with the display key. Subrogation
-`Status` is its raw status. Existing `Selected = 1` inclusion and prediction
-normalization rules are unchanged.
+Rows from different models are paired by ordinal position, not by a database
+relationship. A claim with two litigation rows and three subrogation rows has
+three flat entries, not six. Model fields without a row at a given position
+are null except that model's prediction, which is `"Low"`. Identical source
+rows are preserved. Each model's rows are ordered by feature (where present),
+high prediction first, action, and remaining field values so numbered entries
+are stable for unchanged data. The `Action` field remains the combined display text;
+`Action_Raw` carries the original litigation/severity Action column. The
+litigation feature is included as `Litigation_Feature`.
 
 | Model | Claim column | Prediction column | Action components |
 | --- | --- | --- | --- |
@@ -54,30 +61,9 @@ normalization rules are unchanged.
 | subrogation | CLM_NBR_U | PREDICTIONS | Status |
 
 Litigation's final two-character feature suffix is split before grouping:
-`85-00837106-02` becomes claim number `85-00837106` and feature `02`. Already
-normalized claim numbers are retained. Claim and feature values remain strings to
-preserve leading zeros.
+`85-00837106-02` becomes normalized claim `85-00837106` and feature `02`.
+Claim and feature values remain strings to preserve leading zeros.
 
-Prediction labels after the colon are trimmed and matched case-insensitively:
-`1: High` and `1 : High` both become `High`; Low variants become `Low`.
-Missing or unrecognized predictions become null. Nonempty action components are
-joined with ` — `; a single component is returned alone, and two empty components
-produce null. Blank strings and textual `NULL` are treated as empty action values.
-
-The SQL in `services/landing/claims_service.py` reads all four selector tables in
-one parameterized `UNION ALL` statement. CTEs normalize the rows and are referenced
-once to fetch a flat result, ordered by claim number, model, prediction, and action.
-Python groups the rows by claim and model in one pass, preserving every source row.
-This avoids running four correlated SQL JSON subqueries per claim. No intermediate
-tables or database schema changes are required. Database access, grouping, and
-response validation run in FastAPI's thread pool.
-
-The service logs connection, execute, fetch, connection-close, grouping/validation,
-and total service times, plus row and claim counts. Timings are logged at INFO for
-normal requests and WARNING when total service time reaches five seconds. Execute
-and fetch timings both may include SQL execution work. Total service time excludes
-HTTP response serialization, compression, network transfer, and browser rendering.
-
-The local regression tests exercise the normalization CTE with equivalent SQLite
-functions and verify grouping and the HTTP contract with flat SQL results. SQL
-Server execution and performance require a configured live database to verify.
+The service uses one parameterized `UNION ALL` query. SQL Server execution and
+performance require a configured live database to verify; local tests use
+equivalent SQLite functions for normalization and mock the API database call.

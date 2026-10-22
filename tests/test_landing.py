@@ -133,11 +133,24 @@ def test_sql_splits_short_litigation_claim_and_feature_example(sql_source):
     assert [row[:5] for row in rows] == [("litigation", "8754323", "02", "High", "Review")]
 
 
-def with_filter_keys(model, recommendation):
-    return {
-        **{key: None for key, _ in service.FILTER_POSITIONS[model]},
-        **recommendation,
+def expected_flat(**values):
+    """Include every prefixed response key, even when its source row is absent."""
+    return {**service.FlatLandingClaim().model_dump(), **values}
+
+
+def test_flat_schema_has_every_model_field_and_low_defaults():
+    fields = expected_flat()
+    assert len(fields) == 35
+    assert all(key.startswith(("Fraud_", "Litigation_", "Severity_", "Subro_"))
+               for key in fields)
+    assert {key: value for key, value in fields.items() if key.endswith("_Predictions")} == {
+        "Fraud_Predictions": "Low",
+        "Litigation_Predictions": "Low",
+        "Severity_Predictions": "Low",
+        "Subro_Predictions": "Low",
     }
+    assert all(value is None for key, value in fields.items()
+               if not key.endswith("_Predictions"))
 
 
 @pytest.fixture
@@ -177,33 +190,26 @@ def mock_connection(monkeypatch, sql_rows):
     monkeypatch.setattr(service, "db_connection", connect)
 
 
-def test_api_preserves_arrays_nulls_duplicates_and_json_escaping(
+def test_api_flattens_duplicates_preserves_nulls_and_escapes_json(
     monkeypatch, authenticated_client
 ):
-    recommendations = [
-        {
-            "Feature": "01",
-            "Predictions": "High",
-            "Action": 'Review "medical"\nreport — café',
-        },
-        {"Feature": "02", "Predictions": "Low", "Action": None},
-        {"Feature": "02", "Predictions": "Low", "Action": None},
-    ]
     mock_connection(monkeypatch, [
-        *(('litigation', '85-00837106', r['Feature'], r['Predictions'], r['Action'])
-          for r in recommendations),
+        ("litigation", "85-00837106", "01", "High", 'Review "medical"\nreport — café'),
+        ("litigation", "85-00837106", "02", "Low", None),
+        ("litigation", "85-00837106", "02", "Low", None),
         ("fraud", "85-00937608", None, None, None),
     ])
     response = authenticated_client.get("/landing/")
     assert response.status_code == 200
-    assert response.json() == [
-        {"claim_number": "85-00837106", "fraud": [],
-         "litigation": [with_filter_keys("litigation", row) for row in recommendations],
-         "severity": [], "subrogation": []},
-        {"claim_number": "85-00937608",
-         "fraud": [with_filter_keys("fraud", {"Predictions": None, "Action": None})],
-         "litigation": [], "severity": [], "subrogation": []},
-    ]
+    assert response.json() == {
+        "85-00837106_1": expected_flat(
+            Litigation_Feature="01", Litigation_Predictions="High",
+            Litigation_Action='Review "medical"\nreport — café',
+        ),
+        "85-00837106_2": expected_flat(Litigation_Feature="02"),
+        "85-00837106_3": expected_flat(Litigation_Feature="02"),
+        "85-00937608": expected_flat(),
+    }
 
 
 def test_api_returns_each_models_filter_values_on_its_own_row(
@@ -265,57 +271,43 @@ def test_api_returns_each_models_filter_values_on_its_own_row(
     response = authenticated_client.get("/landing/")
 
     assert response.status_code == 200
-    claim = response.json()[0]
-    assert claim["fraud"] == [{
-        "Predictions": "High", "Action": "Review — Refer to analyst",
-        "REFERRAL_MECHANISM": "Manual", "CTS_TABLE": "Y", "ANALYST_NAME": "Analyst A",
-        "CARPE_STATUS": "N", "low_apd_pay": 125.5, "IES_FLAG": "Y",
-    }]
-    assert claim["litigation"] == [{
-        "Predictions": "Low", "Action": "Monitor — Await documents", "Feature": "02",
-        "MANAGER_FULL_NM": "Manager L", "ADJUSTER_FULL_NM": "Adjuster L",
-        "Action_Raw": "Monitor", "New_Updates": "No", "Addressed": "True",
-        "Litigation_Pred_By_Model": "Yes", "SEVERITY_REVIEWED": "No",
-    }]
-    assert claim["severity"] == [
-        {
-            "Predictions": "High", "Action": "Review — Raise reserve",
-            "MANAGER_FULL_NM": "Manager S", "ADJUSTER_FULL_NM": "Adjuster S",
-            "Action_Raw": "Review", "New_Updates": "Yes",
-            "Threshold_Filter": "< $75000", "Percentage_Bucket": "10%-20%",
-        },
-        {
-            "Predictions": "Low", "Action": None,
-            "MANAGER_FULL_NM": None, "ADJUSTER_FULL_NM": None,
-            "Action_Raw": None, "New_Updates": None,
-            "Threshold_Filter": ">= $75000", "Percentage_Bucket": None,
-        },
-    ]
-    assert claim["subrogation"] == [{
-        "Predictions": "Low", "Action": "Pending",
-        "ACT_ASGNED_USER_FULL_NM": "Manager A", "State_Group": "NY",
-        "PAID_FINAL_IND": "No", "Subro_hist_flag": "Yes",
-        "SUBJ_TXT": "Recovery review", "SubroGroup_IND": "Subrogation",
-        "Status": "Pending",
-    }]
+    assert response.json() == {
+        "85-00837106_1": expected_flat(
+            Fraud_Predictions="High", Fraud_Action="Review — Refer to analyst",
+            Fraud_REFERRAL_MECHANISM="Manual", Fraud_CTS_TABLE="Y",
+            Fraud_ANALYST_NAME="Analyst A", Fraud_CARPE_STATUS="N",
+            Fraud_low_apd_pay=125.5, Fraud_IES_FLAG="Y",
+            Litigation_Action="Monitor — Await documents", Litigation_Feature="02",
+            Litigation_MANAGER_FULL_NM="Manager L",
+            Litigation_ADJUSTER_FULL_NM="Adjuster L",
+            Litigation_Action_Raw="Monitor", Litigation_New_Updates="No",
+            Litigation_Addressed="True", Litigation_Litigation_Pred_By_Model="Yes",
+            Litigation_SEVERITY_REVIEWED="No",
+            Severity_Predictions="High", Severity_Action="Review — Raise reserve",
+            Severity_MANAGER_FULL_NM="Manager S", Severity_ADJUSTER_FULL_NM="Adjuster S",
+            Severity_Action_Raw="Review", Severity_New_Updates="Yes",
+            Severity_Threshold_Filter="< $75000", Severity_Percentage_Bucket="10%-20%",
+            Subro_Action="Pending", Subro_ACT_ASGNED_USER_FULL_NM="Manager A",
+            Subro_State_Group="NY", Subro_PAID_FINAL_IND="No",
+            Subro_Subro_hist_flag="Yes", Subro_SUBJ_TXT="Recovery review",
+            Subro_SubroGroup_IND="Subrogation", Subro_Status="Pending",
+        ),
+        "85-00837106_2": expected_flat(Severity_Threshold_Filter=">= $75000"),
+    }
 
 
-def test_api_returns_empty_list(monkeypatch, authenticated_client):
+def test_api_returns_empty_object(monkeypatch, authenticated_client):
     mock_connection(monkeypatch, [])
     response = authenticated_client.get("/landing/")
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {}
 
 
 @pytest.mark.parametrize("present_model", service.MODELS)
-def test_api_missing_models_are_empty_but_null_fields_are_preserved(
+def test_api_missing_models_have_low_predictions_and_null_other_fields(
     monkeypatch, authenticated_client, present_model
 ):
-    records = [{"Predictions": None, "Action": None}]
     feature = "01" if present_model == "litigation" else None
-    if feature:
-        records[0]["Feature"] = feature
-    records = [with_filter_keys(present_model, record) for record in records]
     mock_connection(
         monkeypatch, [(present_model, "85-00837106", feature, None, None)]
     )
@@ -323,24 +315,24 @@ def test_api_missing_models_are_empty_but_null_fields_are_preserved(
     response = authenticated_client.get("/landing/")
 
     assert response.status_code == 200
-    assert response.json() == [{
-        "claim_number": "85-00837106",
-        **{model: records if model == present_model else [] for model in service.MODELS},
-    }]
+    expected = expected_flat()
+    if feature:
+        expected["Litigation_Feature"] = feature
+    assert response.json() == {"85-00837106": expected}
 
 
-def test_api_invalid_prediction_is_not_silently_dropped(
+def test_api_invalid_prediction_defaults_to_low(
     monkeypatch, authenticated_client
 ):
     mock_connection(
         monkeypatch, [("fraud", "85-00837106", None, "invalid", None)]
     )
     response = authenticated_client.get("/landing/")
-    assert response.status_code == 500
-    assert response.json() == {"detail": {"error": "Database operation failed"}}
+    assert response.status_code == 200
+    assert response.json() == {"85-00837106": expected_flat()}
 
 
-def test_grouping_keeps_model_records_separate_and_preserves_duplicates(sql_source):
+def test_grouping_zips_model_rows_without_cartesian_multiplication(sql_source):
     rows = sql_source({
         "fraud": [("85-00837106", "1: High", "Status", "Feedback", 1)],
         "litigation": [
@@ -357,49 +349,61 @@ def test_grouping_keeps_model_records_separate_and_preserves_duplicates(sql_sour
             ("85-00999999", "0: Low", None, None, 1),
         ],
     })
-    actual = [claim.model_dump() for claim in service.group_landing_rows(rows)]
-    assert actual == [
-        {
-            "claim_number": "85-00837106",
-            "fraud": [with_filter_keys(
-                "fraud", {"Predictions": "High", "Action": "Status — Feedback"}
-            )],
-            "litigation": [
-                with_filter_keys("litigation", {
-                    "Feature": "01",
-                    "Predictions": "High",
-                    "Action": "Action A — Details A",
-                    "Action_Raw": "Action A",
-                }),
-                with_filter_keys("litigation", {
-                    "Feature": "02", "Predictions": "Low", "Action": "Action B",
-                    "Action_Raw": "Action B"
-                }),
-                with_filter_keys("litigation", {
-                    "Feature": "02", "Predictions": "Low", "Action": "Action B",
-                    "Action_Raw": "Action B"
-                }),
-            ],
-            "severity": [
-                with_filter_keys("severity", {
-                    "Predictions": "High", "Action": "Settle", "Action_Raw": "Settle"
-                }),
-                with_filter_keys("severity", {"Predictions": "Low", "Action": None}),
-            ],
-            "subrogation": [with_filter_keys(
-                "subrogation", {
-                    "Predictions": "High", "Action": "Assigned", "Status": "Assigned"
-                }
-            )],
-        },
-        {
-            "claim_number": "85-00999999",
-            "fraud": [], "litigation": [], "severity": [],
-            "subrogation": [with_filter_keys(
-                "subrogation", {"Predictions": "Low", "Action": None}
-            )],
-        },
-    ]
+    actual = {
+        key: claim.model_dump()
+        for key, claim in service.group_landing_rows(rows).items()
+    }
+    assert actual == {
+        "85-00837106_1": expected_flat(
+            Fraud_Predictions="High", Fraud_Action="Status — Feedback",
+            Litigation_Predictions="High", Litigation_Action="Action A — Details A",
+            Litigation_Feature="01", Litigation_Action_Raw="Action A",
+            Severity_Predictions="High", Severity_Action="Settle",
+            Severity_Action_Raw="Settle",
+            Subro_Predictions="High", Subro_Action="Assigned", Subro_Status="Assigned",
+        ),
+        "85-00837106_2": expected_flat(
+            Litigation_Action="Action B", Litigation_Feature="02",
+            Litigation_Action_Raw="Action B",
+        ),
+        "85-00837106_3": expected_flat(
+            Litigation_Action="Action B", Litigation_Feature="02",
+            Litigation_Action_Raw="Action B",
+        ),
+        "85-00999999": expected_flat(),
+    }
+
+
+def test_grouping_uses_maximum_model_count_not_cross_product(sql_source):
+    rows = sql_source({
+        "litigation": [
+            ("85-00837106-01", "1: High", "First litigation", None, 1),
+            ("85-00837106-02", "0: Low", "Second litigation", None, 1),
+        ],
+        "subrogation": [
+            ("85-00837106", "1: High", "First subro", None, 1),
+            ("85-00837106", "0: Low", "Second subro", None, 1),
+            ("85-00837106", None, "Third subro", None, 1),
+        ],
+    })
+    actual = {
+        key: claim.model_dump()
+        for key, claim in service.group_landing_rows(rows).items()
+    }
+    assert list(actual) == ["85-00837106_1", "85-00837106_2", "85-00837106_3"]
+    assert actual["85-00837106_1"] == expected_flat(
+        Litigation_Predictions="High", Litigation_Action="First litigation",
+        Litigation_Feature="01", Litigation_Action_Raw="First litigation",
+        Subro_Predictions="High", Subro_Action="First subro", Subro_Status="First subro",
+    )
+    assert actual["85-00837106_2"] == expected_flat(
+        Litigation_Action="Second litigation", Litigation_Feature="02",
+        Litigation_Action_Raw="Second litigation",
+        Subro_Action="Second subro", Subro_Status="Second subro",
+    )
+    assert actual["85-00837106_3"] == expected_flat(
+        Subro_Action="Third subro", Subro_Status="Third subro",
+    )
 
 
 def test_service_logs_phase_timings(monkeypatch, caplog):

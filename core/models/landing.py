@@ -1,57 +1,48 @@
-"""Claim summaries for the combined model landing page."""
+"""Flat, model-qualified claim summaries for the combined landing page."""
 
 from typing import Any, Literal
 
 from pydantic import BaseModel
 
 
-class ModelRecommendation(BaseModel):
-    Predictions: Literal["High", "Low"] | None
-    Action: str | None
+class FlatLandingClaim(BaseModel):
+    """One ordinal row across the four models for a normalized claim number."""
 
+    Fraud_Predictions: Literal["High", "Low"] = "Low"
+    Fraud_Action: str | None = None
+    Fraud_REFERRAL_MECHANISM: Any = None
+    Fraud_CTS_TABLE: Any = None
+    Fraud_ANALYST_NAME: Any = None
+    Fraud_CARPE_STATUS: Any = None
+    Fraud_low_apd_pay: Any = None
+    Fraud_IES_FLAG: Any = None
 
-class FraudRecommendation(ModelRecommendation):
-    REFERRAL_MECHANISM: Any = None
-    CTS_TABLE: Any = None
-    ANALYST_NAME: Any = None
-    CARPE_STATUS: Any = None
-    low_apd_pay: Any = None
-    IES_FLAG: Any = None
+    Litigation_Predictions: Literal["High", "Low"] = "Low"
+    Litigation_Action: str | None = None
+    Litigation_Feature: str | None = None
+    Litigation_MANAGER_FULL_NM: Any = None
+    Litigation_ADJUSTER_FULL_NM: Any = None
+    Litigation_Action_Raw: Any = None
+    Litigation_New_Updates: Any = None
+    Litigation_Addressed: Any = None
+    Litigation_Litigation_Pred_By_Model: Any = None
+    Litigation_SEVERITY_REVIEWED: Any = None
 
+    Severity_Predictions: Literal["High", "Low"] = "Low"
+    Severity_Action: str | None = None
+    Severity_MANAGER_FULL_NM: Any = None
+    Severity_ADJUSTER_FULL_NM: Any = None
+    Severity_Action_Raw: Any = None
+    Severity_New_Updates: Any = None
+    Severity_Threshold_Filter: Any = None
+    Severity_Percentage_Bucket: Any = None
 
-class LitigationRecommendation(ModelRecommendation):
-    Feature: str
-    MANAGER_FULL_NM: Any = None
-    ADJUSTER_FULL_NM: Any = None
-    Action_Raw: Any = None
-    New_Updates: Any = None
-    Addressed: Any = None
-    Litigation_Pred_By_Model: Any = None
-    SEVERITY_REVIEWED: Any = None
-
-
-class SeverityRecommendation(ModelRecommendation):
-    MANAGER_FULL_NM: Any = None
-    ADJUSTER_FULL_NM: Any = None
-    Action_Raw: Any = None
-    New_Updates: Any = None
-    Threshold_Filter: Any = None
-    Percentage_Bucket: Any = None
-
-
-class SubrogationRecommendation(ModelRecommendation):
-    ACT_ASGNED_USER_FULL_NM: Any = None
-    State_Group: Any = None
-    PAID_FINAL_IND: Any = None
-    Subro_hist_flag: Any = None
-    SUBJ_TXT: Any = None
-    SubroGroup_IND: Any = None
-    Status: Any = None
-
-
-class LandingClaim(BaseModel):
-    claim_number: str
-    fraud: list[FraudRecommendation]
-    litigation: list[LitigationRecommendation]
-    severity: list[SeverityRecommendation]
-    subrogation: list[SubrogationRecommendation]
+    Subro_Predictions: Literal["High", "Low"] = "Low"
+    Subro_Action: str | None = None
+    Subro_ACT_ASGNED_USER_FULL_NM: Any = None
+    Subro_State_Group: Any = None
+    Subro_PAID_FINAL_IND: Any = None
+    Subro_Subro_hist_flag: Any = None
+    Subro_SUBJ_TXT: Any = None
+    Subro_SubroGroup_IND: Any = None
+    Subro_Status: Any = None

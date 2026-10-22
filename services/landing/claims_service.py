@@ -8,12 +8,18 @@ from typing import Any
 from fastapi import HTTPException
 from fastapi.concurrency import run_in_threadpool
 
-from core.models.landing import LandingClaim
+from core.models.landing import FlatLandingClaim
 from db import db_connection
 
 
 logger = logging.getLogger(__name__)
 MODELS = ("fraud", "litigation", "severity", "subrogation")
+MODEL_PREFIXES = {
+    "fraud": "Fraud",
+    "litigation": "Litigation",
+    "severity": "Severity",
+    "subrogation": "Subro",
+}
 
 # UI filter mapping and selector-table columns. The landing response uses the
 # actual DB column name, except raw Action (Action_Raw) because the existing
@@ -168,9 +174,9 @@ ORDER BY claim_number, model, feature_number, [Predictions], [Action];
 """
 
 
-def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
-    """Collect rows in one pass, preserving duplicates and prediction/action pairs."""
-    claims: dict[str, dict[str, Any]] = {}
+def group_landing_rows(rows: Iterable[Sequence[Any]]) -> dict[str, FlatLandingClaim]:
+    """Zip each claim's model rows by ordinal into complete, flat records."""
+    claims: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for row in rows:
         model, claim_number, feature, prediction, action, *filter_values = row
         if model not in MODELS:
@@ -178,11 +184,11 @@ def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
         if len(filter_values) != len(FILTER_COLUMNS):
             raise ValueError("Landing row has an unexpected filter column count")
         if claim_number not in claims:
-            claims[claim_number] = {
-                "claim_number": claim_number,
-                **{name: [] for name in MODELS},
-            }
-        recommendation = {"Predictions": prediction, "Action": action}
+            claims[claim_number] = {name: [] for name in MODELS}
+        recommendation = {
+            "Predictions": "High" if prediction == "High" else "Low",
+            "Action": action,
+        }
         recommendation.update(
             {key: filter_values[index] for key, index in FILTER_POSITIONS[model]}
         )
@@ -192,10 +198,34 @@ def group_landing_rows(rows: Iterable[Sequence[Any]]) -> list[LandingClaim]:
             recommendation["Feature"] = feature
         claims[claim_number][model].append(recommendation)
 
-    return [LandingClaim.model_validate(claim) for claim in claims.values()]
+    result: dict[str, FlatLandingClaim] = {}
+    for claim_number, model_rows in claims.items():
+        # A numbered key must identify the same source row on repeated requests,
+        # including when SQL has tied feature/prediction/action sort values.
+        for model in MODELS:
+            model_rows[model].sort(key=lambda record: (
+                str(record.get("Feature") or ""),
+                record["Predictions"] != "High",
+                str(record.get("Action") or ""),
+                tuple((key, repr(value)) for key, value in sorted(record.items())),
+            ))
+        count = max(len(model_rows[model]) for model in MODELS)
+        for index in range(count):
+            flat: dict[str, Any] = {}
+            for model in MODELS:
+                if index < len(model_rows[model]):
+                    flat.update({
+                        f"{MODEL_PREFIXES[model]}_{field}": value
+                        for field, value in model_rows[model][index].items()
+                    })
+            key = f"{claim_number}_{index + 1}" if count > 1 else claim_number
+            if key in result:
+                raise ValueError(f"Duplicate landing response key: {key}")
+            result[key] = FlatLandingClaim.model_validate(flat)
+    return result
 
 
-def fetch_landing_claims() -> list[LandingClaim]:
+def fetch_landing_claims() -> dict[str, FlatLandingClaim]:
     started = perf_counter()
     with db_connection() as connection:
         connected = perf_counter()
@@ -212,7 +242,8 @@ def fetch_landing_claims() -> list[LandingClaim]:
     log = logger.warning if finished - started >= 5 else logger.info
     log(
         "Landing claims timings: connection=%.3fs execute=%.3fs fetch=%.3fs "
-        "close=%.3fs grouping_validation=%.3fs total=%.3fs rows=%d claims=%d",
+        "close=%.3fs grouping_validation=%.3fs total=%.3fs "
+        "rows=%d claims=%d entries=%d",
         connected - started,
         executed - connected,
         fetched - executed,
@@ -220,12 +251,13 @@ def fetch_landing_claims() -> list[LandingClaim]:
         finished - closed,
         finished - started,
         len(rows),
+        len({row[1] for row in rows}),
         len(claims),
     )
     return claims
 
 
-async def get_claims() -> list[LandingClaim]:
+async def get_claims() -> dict[str, FlatLandingClaim]:
     try:
         return await run_in_threadpool(fetch_landing_claims)
     except Exception as error:
