@@ -37,12 +37,12 @@ class FlatLandingClaim(BaseModel):
     Severity_Threshold_Filter: Any = None
     Severity_Percentage_Bucket: Any = None
 
-    Subro_Predictions: Literal["High", "Low"] = "Low"
-    Subro_Action: str | None = None
-    Subro_ACT_ASGNED_USER_FULL_NM: Any = None
-    Subro_State_Group: Any = None
-    Subro_PAID_FINAL_IND: Any = None
-    Subro_Subro_hist_flag: Any = None
-    Subro_SUBJ_TXT: Any = None
-    Subro_SubroGroup_IND: Any = None
-    Subro_Status: Any = None
+    Subrogation_Predictions: Literal["High", "Low"] = "Low"
+    Subrogation_Action: str | None = None
+    Subrogation_ACT_ASGNED_USER_FULL_NM: Any = None
+    Subrogation_State_Group: Any = None
+    Subrogation_PAID_FINAL_IND: Any = None
+    Subrogation_Subro_hist_flag: Any = None
+    Subrogation_SUBJ_TXT: Any = None
+    Subrogation_SubroGroup_IND: Any = None
+    Subrogation_Status: Any = None

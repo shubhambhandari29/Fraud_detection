@@ -28,7 +28,7 @@ def sql_source():
     )
     tables = [
         ("tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector",
-         "CLM_NBR", "ML_PREDICTIONS", "Status", "Feedback"),
+         "CLM_NBR", "SIU_REFERRAL", "Status", "Feedback"),
         ("tblALLitigation_OpenClaimsPredictions_Selector",
          "DERIVE_CLM_FTR_NBR", "PREDICTIONS", "Action", "ACTION_DETAILS"),
         ("tblPALSeverity_OpenClaimsPredictions_Selector_GAME",
@@ -45,8 +45,11 @@ def sql_source():
             for _, column in service.FILTER_FIELDS[model]
             if column not in base_columns
         )
+        if model == "fraud":
+            extra_columns += ("ML_PREDICTIONS",)
+        prediction_type = "REAL" if model == "fraud" else "TEXT"
         connection.execute(
-            f'CREATE TABLE [{table}] ([{claim}] TEXT, [{prediction}] TEXT, '
+            f'CREATE TABLE [{table}] ([{claim}] TEXT, [{prediction}] {prediction_type}, '
             f'[{action}] TEXT, [{details}] TEXT, [Selected] INTEGER'
             + "".join(f", [{column}]" for column in extra_columns)
             + ")"
@@ -83,8 +86,8 @@ def sql_source():
 def test_sql_preserves_duplicates_and_normalizes_all_four_models(sql_source):
     rows = sql_source({
         "fraud": [
-            ("85-00837106", "1: High", "Status", "Feedback", 1),
-            ("85-00837106", "0: Low", "Excluded", None, 0),
+            ("85-00837106", 1, "Status", "Feedback", 1),
+            ("85-00837106", 0, "Excluded", None, 0),
         ],
         "litigation": [
             ("85-00837106-01", "1 : High", "Action A", "Details A", 1),
@@ -107,6 +110,24 @@ def test_sql_preserves_duplicates_and_normalizes_all_four_models(sql_source):
     ) in core_rows
     assert ("severity", "85-00837106", None, "Low", "Medical Report") in core_rows
     assert ("subrogation", "85-00837106", None, "High", "Assigned") in core_rows
+
+
+@pytest.mark.parametrize(
+    ("siu_referral", "old_prediction", "expected"),
+    [(1, "0: Low", "High"), (0, "1: High", "Low"), (None, "1: High", None)],
+)
+def test_sql_fraud_prediction_uses_siu_referral_not_ml_prediction(
+    sql_source, siu_referral, old_prediction, expected
+):
+    rows = sql_source({"fraud": [
+        ("85-00837106", siu_referral, None, None, 1,
+         {"ML_PREDICTIONS": old_prediction})
+    ]})
+    assert [row[:5] for row in rows] == [
+        ("fraud", "85-00837106", None, expected, None)
+    ]
+    result = service.group_landing_rows(rows)["85-00837106"]
+    assert result.Fraud_Predictions == ("High" if siu_referral == 1 else "Low")
 
 
 @pytest.mark.parametrize("prediction", [None, "", "NULL", "unexpected"])
@@ -141,13 +162,13 @@ def expected_flat(**values):
 def test_flat_schema_has_every_model_field_and_low_defaults():
     fields = expected_flat()
     assert len(fields) == 35
-    assert all(key.startswith(("Fraud_", "Litigation_", "Severity_", "Subro_"))
+    assert all(key.startswith(("Fraud_", "Litigation_", "Severity_", "Subrogation_"))
                for key in fields)
     assert {key: value for key, value in fields.items() if key.endswith("_Predictions")} == {
         "Fraud_Predictions": "Low",
         "Litigation_Predictions": "Low",
         "Severity_Predictions": "Low",
-        "Subro_Predictions": "Low",
+        "Subrogation_Predictions": "Low",
     }
     assert all(value is None for key, value in fields.items()
                if not key.endswith("_Predictions"))
@@ -217,7 +238,7 @@ def test_api_returns_each_models_filter_values_on_its_own_row(
 ):
     rows = sql_source({
         "fraud": [(
-            "85-00837106", "1: High", "Review", "Refer to analyst", 1,
+            "85-00837106", 1, "Review", "Refer to analyst", 1,
             {
                 "REFERRAL_MECHANISM": "Manual",
                 "CTS_TABLE": "Y",
@@ -287,10 +308,10 @@ def test_api_returns_each_models_filter_values_on_its_own_row(
             Severity_MANAGER_FULL_NM="Manager S", Severity_ADJUSTER_FULL_NM="Adjuster S",
             Severity_Action_Raw="Review", Severity_New_Updates="Yes",
             Severity_Threshold_Filter="< $75000", Severity_Percentage_Bucket="10%-20%",
-            Subro_Action="Pending", Subro_ACT_ASGNED_USER_FULL_NM="Manager A",
-            Subro_State_Group="NY", Subro_PAID_FINAL_IND="No",
-            Subro_Subro_hist_flag="Yes", Subro_SUBJ_TXT="Recovery review",
-            Subro_SubroGroup_IND="Subrogation", Subro_Status="Pending",
+            Subrogation_Action="Pending", Subrogation_ACT_ASGNED_USER_FULL_NM="Manager A",
+            Subrogation_State_Group="NY", Subrogation_PAID_FINAL_IND="No",
+            Subrogation_Subro_hist_flag="Yes", Subrogation_SUBJ_TXT="Recovery review",
+            Subrogation_SubroGroup_IND="Subrogation", Subrogation_Status="Pending",
         ),
         "85-00837106_2": expected_flat(Severity_Threshold_Filter=">= $75000"),
     }
@@ -334,7 +355,7 @@ def test_api_invalid_prediction_defaults_to_low(
 
 def test_grouping_zips_model_rows_without_cartesian_multiplication(sql_source):
     rows = sql_source({
-        "fraud": [("85-00837106", "1: High", "Status", "Feedback", 1)],
+        "fraud": [("85-00837106", 1, "Status", "Feedback", 1)],
         "litigation": [
             ("85-00837106-01", "1 : High", "Action A", "Details A", 1),
             ("85-00837106-02", "0 : Low", "Action B", None, 1),
@@ -360,7 +381,8 @@ def test_grouping_zips_model_rows_without_cartesian_multiplication(sql_source):
             Litigation_Feature="01", Litigation_Action_Raw="Action A",
             Severity_Predictions="High", Severity_Action="Settle",
             Severity_Action_Raw="Settle",
-            Subro_Predictions="High", Subro_Action="Assigned", Subro_Status="Assigned",
+            Subrogation_Predictions="High", Subrogation_Action="Assigned",
+            Subrogation_Status="Assigned",
         ),
         "85-00837106_2": expected_flat(
             Litigation_Action="Action B", Litigation_Feature="02",
@@ -394,15 +416,16 @@ def test_grouping_uses_maximum_model_count_not_cross_product(sql_source):
     assert actual["85-00837106_1"] == expected_flat(
         Litigation_Predictions="High", Litigation_Action="First litigation",
         Litigation_Feature="01", Litigation_Action_Raw="First litigation",
-        Subro_Predictions="High", Subro_Action="First subro", Subro_Status="First subro",
+        Subrogation_Predictions="High", Subrogation_Action="First subro",
+        Subrogation_Status="First subro",
     )
     assert actual["85-00837106_2"] == expected_flat(
         Litigation_Action="Second litigation", Litigation_Feature="02",
         Litigation_Action_Raw="Second litigation",
-        Subro_Action="Second subro", Subro_Status="Second subro",
+        Subrogation_Action="Second subro", Subrogation_Status="Second subro",
     )
     assert actual["85-00837106_3"] == expected_flat(
-        Subro_Action="Third subro", Subro_Status="Third subro",
+        Subrogation_Action="Third subro", Subrogation_Status="Third subro",
     )
 
 

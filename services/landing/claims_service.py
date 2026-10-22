@@ -18,7 +18,7 @@ MODEL_PREFIXES = {
     "fraud": "Fraud",
     "litigation": "Litigation",
     "severity": "Severity",
-    "subrogation": "Subro",
+    "subrogation": "Subrogation",
 }
 
 # UI filter mapping and selector-table columns. The landing response uses the
@@ -92,7 +92,9 @@ NORMALIZED_ROWS_CTE = f"""
 WITH source_rows AS (
     SELECT N'fraud' AS model,
            CAST([CLM_NBR] AS nvarchar(450)) AS raw_claim_number,
-           CAST([ML_PREDICTIONS] AS nvarchar(max)) AS raw_prediction,
+           CASE [SIU_REFERRAL] WHEN 1 THEN N'High'
+                               WHEN 0 THEN N'Low'
+                               ELSE NULL END AS raw_prediction,
            CAST([Status] AS nvarchar(max)) AS raw_action,
            CAST([Feedback] AS nvarchar(max)) AS raw_details,
            {_source_filter_columns("fraud")}

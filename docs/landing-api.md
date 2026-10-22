@@ -8,7 +8,7 @@ The response is a JSON object keyed by normalized claim number. If a claim has
 multiple rows in any model, its keys gain one-based suffixes (`_1`, `_2`, etc.).
 A claim with only one combined row has no suffix. Every value is a flat object
 with all 35 fields defined by `FlatLandingClaim`; the original field name is
-prefixed with `Fraud_`, `Litigation_`, `Severity_`, or `Subro_`.
+prefixed with `Fraud_`, `Litigation_`, `Severity_`, or `Subrogation_`.
 
 ```json
 {
@@ -20,8 +20,8 @@ prefixed with `Fraud_`, `Litigation_`, `Severity_`, or `Subro_`.
     "Litigation_Feature": "01",
     "Severity_Predictions": "Low",
     "Severity_Action": null,
-    "Subro_Predictions": "High",
-    "Subro_Action": "Assigned"
+    "Subrogation_Predictions": "High",
+    "Subrogation_Action": "Assigned"
   },
   "85-00837106_2": {
     "Fraud_Predictions": "Low",
@@ -31,8 +31,8 @@ prefixed with `Fraud_`, `Litigation_`, `Severity_`, or `Subro_`.
     "Litigation_Feature": "02",
     "Severity_Predictions": "Low",
     "Severity_Action": null,
-    "Subro_Predictions": "Low",
-    "Subro_Action": null
+    "Subrogation_Predictions": "Low",
+    "Subrogation_Action": null
   }
 }
 ```
@@ -55,10 +55,14 @@ litigation feature is included as `Litigation_Feature`.
 
 | Model | Claim column | Prediction column | Action components |
 | --- | --- | --- | --- |
-| fraud | CLM_NBR | ML_PREDICTIONS | Status, Feedback |
+| fraud | CLM_NBR | SIU_REFERRAL (`1` = High, `0` = Low) | Status, Feedback |
 | litigation | DERIVE_CLM_FTR_NBR | PREDICTIONS | Action, ACTION_DETAILS |
 | severity | CLM_NBR | PREDICTIONS | Action, ACTION_DETAILS |
 | subrogation | CLM_NBR_U | PREDICTIONS | Status |
+
+Fraud prediction uses the numeric `SIU_REFERRAL` value; `ML_PREDICTIONS` is not
+used by this endpoint. The other models continue to normalize their text
+prediction labels after the colon.
 
 Litigation's final two-character feature suffix is split before grouping:
 `85-00837106-02` becomes normalized claim `85-00837106` and feature `02`.
