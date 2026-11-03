@@ -39,6 +39,13 @@ database names have the Power BI source names as defaults.
     "ies_bills": "Y",
     "iso_match": "N"
   },
+  "claim_review": [
+    {
+      "Status": "Dismissed",
+      "Feedback": "No concerns",
+      "Feedback Notes": "Reviewed claim details"
+    }
+  ],
   "edw": [],
   "cts": [],
   "smart_features": [],
@@ -53,6 +60,11 @@ database names have the Power BI source names as defaults.
 Every source can return multiple rows. IES flags are nested under the
 corresponding bill in a `Flags` array; the Power BI-style concatenated values
 are also returned as `Flag Short Names` and `Flag Type Codes`.
+
+`claim_review` contains every matching selector-table row for the claim, ordered
+by `ID`. Each row has `Status`, `Feedback`, and `Feedback Notes`; when there are
+no matching rows, it is `[]`. This section comes from `DATATEXT_DB_NAME` and
+does not use development placeholders.
 
 All dates use the existing API `YYYY-MM-DD` serialization.
 

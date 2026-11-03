@@ -163,6 +163,13 @@ FROM [dbo].[tblFraudThirdPartyAutoBI_GAME]
 WHERE [clm_nbr] = ?
 """
 
+CLAIM_REVIEW_QUERY = """
+SELECT [Status], [Feedback], [Feedback Notes]
+FROM [dbo].[tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector]
+WHERE [CLM_NBR] = ?
+ORDER BY [ID]
+"""
+
 
 def _fetch_rows(cursor: Cursor, query: str, claim_number: str) -> list[dict[str, Any]]:
     """Execute one fixed, parameterized dashboard query."""
@@ -195,9 +202,13 @@ def _fetch_vendor_sections(claim_number: str) -> dict[str, list[dict[str, Any]]]
 def _fetch_datatext_sections(
     claim_number: str,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Load the GAME narrative stored in DataModelingAndTextMining."""
+    """Load the GAME narrative and selector review fields from DataModelingAndTextMining."""
     with db_connection(settings.DATATEXT_DB_NAME) as connection:
-        return {"game_summary": _fetch_rows(connection.cursor(), GAME_SUMMARY_QUERY, claim_number)}
+        cursor = connection.cursor()
+        return {
+            "game_summary": _fetch_rows(cursor, GAME_SUMMARY_QUERY, claim_number),
+            "claim_review": _fetch_rows(cursor, CLAIM_REVIEW_QUERY, claim_number),
+        }
 
 
 def _nonblank_unique(values: Sequence[Any]) -> list[Any]:
@@ -319,6 +330,7 @@ async def get_dashboard(claim_number: str) -> ThirdPartyAutoDashboard:
         flags = serialize_record_dates(fraud["ies_flags"])
         ies_bills = _attach_ies_flags(bills, flags)
         game_summary = serialize_record_dates(datatext["game_summary"])
+        claim_review = serialize_record_dates(datatext["claim_review"])
 
         indicators = _build_indicators(
             edw=edw,
@@ -331,6 +343,7 @@ async def get_dashboard(claim_number: str) -> ThirdPartyAutoDashboard:
         return ThirdPartyAutoDashboard(
             claim_number=normalized_claim_number,
             indicators=indicators,
+            claim_review=claim_review,
             edw=empty_section_or_placeholder(edw, "fraud.edw", normalized_claim_number),
             cts=cts,
             smart_features=smart_features,

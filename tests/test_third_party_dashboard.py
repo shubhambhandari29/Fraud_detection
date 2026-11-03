@@ -1,6 +1,7 @@
 """Third Party Auto dashboard API and aggregation coverage."""
 
 import asyncio
+from contextlib import contextmanager
 from datetime import datetime
 
 from fastapi.testclient import TestClient
@@ -72,7 +73,13 @@ def test_dashboard_aggregates_sections_and_power_bi_indicators(monkeypatch):
     monkeypatch.setattr(
         dashboard_service,
         "_fetch_datatext_sections",
-        lambda claim_number: {"game_summary": [{"clm_nbr": claim_number, "topic": "Summary"}]},
+        lambda claim_number: {
+            "game_summary": [{"clm_nbr": claim_number, "topic": "Summary"}],
+            "claim_review": [
+                {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "First"},
+                {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": "Second"},
+            ],
+        },
     )
 
     result = asyncio.run(dashboard_service.get_dashboard(" 85-00370154 "))
@@ -89,6 +96,10 @@ def test_dashboard_aggregates_sections_and_power_bi_indicators(monkeypatch):
         "iso_match": "Y",
     }
     assert result.edw[0]["FTR_CREAT_DT_U"] == "2026-10-07"
+    assert result.claim_review == [
+        {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "First"},
+        {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": "Second"},
+    ]
     assert result.alert_reasons == ["Reason A", "Reason B"]
     assert result.ies_bills[0]["Flag Short Names"] == "Duplicate"
     assert result.ies_bills[0]["Flag Type Codes"] == "DUP"
@@ -117,12 +128,13 @@ def test_dashboard_returns_n_for_missing_related_sections(monkeypatch):
     monkeypatch.setattr(
         dashboard_service,
         "_fetch_datatext_sections",
-        lambda claim_number: {"game_summary": []},
+        lambda claim_number: {"game_summary": [], "claim_review": []},
     )
 
     result = asyncio.run(dashboard_service.get_dashboard("85-00370154"))
 
     assert set(result.indicators.model_dump().values()) == {"N"}
+    assert result.claim_review == []
     assert result.edw[0]["Clm_Nbr"] == "85-00370154"
     assert result.edw[0]["_dummy"] is True
     assert result.watchlist[0]["_dummy"] is True
@@ -146,7 +158,7 @@ def test_dashboard_placeholder_switch_can_restore_empty_arrays(monkeypatch):
     monkeypatch.setattr(
         dashboard_service,
         "_fetch_datatext_sections",
-        lambda claim_number: {"game_summary": []},
+        lambda claim_number: {"game_summary": [], "claim_review": []},
     )
 
     result = asyncio.run(dashboard_service.get_dashboard("85-00370154"))
@@ -154,6 +166,50 @@ def test_dashboard_placeholder_switch_can_restore_empty_arrays(monkeypatch):
     assert result.edw == []
     assert result.watchlist == []
     assert result.ies_bills == []
+    assert result.claim_review == []
+
+
+def test_claim_review_query_uses_datatext_database_and_parameterized_claim(monkeypatch):
+    calls = []
+
+    class Cursor:
+        def execute(self, query, params):
+            calls.append((query, params))
+            self.description = (
+                [("Status",), ("Feedback",), ("Feedback Notes",)]
+                if query == dashboard_service.CLAIM_REVIEW_QUERY
+                else [("clm_nbr",), ("topic",), ("value",), ("template",)]
+            )
+
+        def fetchall(self):
+            return (
+                [("Assigned", "Investigate", "Review note"),
+                 ("Dismissed", "No concerns", None)]
+                if self.description[0][0] == "Status"
+                else []
+            )
+
+    class Connection:
+        def cursor(self):
+            return Cursor()
+
+    @contextmanager
+    def connect(database_name):
+        assert database_name == dashboard_service.settings.DATATEXT_DB_NAME
+        yield Connection()
+
+    monkeypatch.setattr(dashboard_service, "db_connection", connect)
+
+    sections = dashboard_service._fetch_datatext_sections("85-00370154")
+
+    assert sections["claim_review"] == [
+        {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "Review note"},
+        {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": None},
+    ]
+    assert calls == [
+        (dashboard_service.GAME_SUMMARY_QUERY, ["85-00370154"]),
+        (dashboard_service.CLAIM_REVIEW_QUERY, ["85-00370154"]),
+    ]
 
 
 def test_dashboard_route_is_authenticated_and_forwards_claim(monkeypatch):
