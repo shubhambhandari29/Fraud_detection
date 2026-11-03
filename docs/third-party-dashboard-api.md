@@ -41,6 +41,7 @@ database names have the Power BI source names as defaults.
   },
   "status_feedback": [
     {
+      "ID": "1111",
       "Status": "Dismissed",
       "Feedback": "No concerns",
       "Feedback Notes": "Reviewed claim details"
@@ -62,9 +63,9 @@ corresponding bill in a `Flags` array; the Power BI-style concatenated values
 are also returned as `Flag Short Names` and `Flag Type Codes`.
 
 `status_feedback` contains every matching selector-table row for the claim, ordered
-by `ID`. Each row has `Status`, `Feedback`, and `Feedback Notes`; when there are
-no matching rows, it is `[]`. This section comes from `DATATEXT_DB_NAME` and
-does not use development placeholders.
+by `ID`. Each row has the selector-table `ID`, `Status`, `Feedback`, and
+`Feedback Notes`. When there are no matching rows, it is `[]`. This section
+comes from `DATATEXT_DB_NAME` and does not use development placeholders.
 
 All dates use the existing API `YYYY-MM-DD` serialization.
 

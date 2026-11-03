@@ -164,7 +164,7 @@ WHERE [clm_nbr] = ?
 """
 
 STATUS_FEEDBACK_QUERY = """
-SELECT [Status], [Feedback], [Feedback Notes]
+SELECT [ID], [Status], [Feedback], [Feedback Notes]
 FROM [dbo].[tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector]
 WHERE [CLM_NBR] = ?
 ORDER BY [ID]

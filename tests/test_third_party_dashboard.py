@@ -76,8 +76,10 @@ def test_dashboard_aggregates_sections_and_power_bi_indicators(monkeypatch):
         lambda claim_number: {
             "game_summary": [{"clm_nbr": claim_number, "topic": "Summary"}],
             "status_feedback": [
-                {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "First"},
-                {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": "Second"},
+                {"ID": "1111", "Status": "Assigned", "Feedback": "Investigate",
+                 "Feedback Notes": "First"},
+                {"ID": "2222", "Status": "Dismissed", "Feedback": "No concerns",
+                 "Feedback Notes": "Second"},
             ],
         },
     )
@@ -97,8 +99,10 @@ def test_dashboard_aggregates_sections_and_power_bi_indicators(monkeypatch):
     }
     assert result.edw[0]["FTR_CREAT_DT_U"] == "2026-10-07"
     assert result.status_feedback == [
-        {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "First"},
-        {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": "Second"},
+        {"ID": "1111", "Status": "Assigned", "Feedback": "Investigate",
+         "Feedback Notes": "First"},
+        {"ID": "2222", "Status": "Dismissed", "Feedback": "No concerns",
+         "Feedback Notes": "Second"},
     ]
     assert result.alert_reasons == ["Reason A", "Reason B"]
     assert result.ies_bills[0]["Flag Short Names"] == "Duplicate"
@@ -176,16 +180,16 @@ def test_status_feedback_query_uses_datatext_database_and_parameterized_claim(mo
         def execute(self, query, params):
             calls.append((query, params))
             self.description = (
-                [("Status",), ("Feedback",), ("Feedback Notes",)]
+                [("ID",), ("Status",), ("Feedback",), ("Feedback Notes",)]
                 if query == dashboard_service.STATUS_FEEDBACK_QUERY
                 else [("clm_nbr",), ("topic",), ("value",), ("template",)]
             )
 
         def fetchall(self):
             return (
-                [("Assigned", "Investigate", "Review note"),
-                 ("Dismissed", "No concerns", None)]
-                if self.description[0][0] == "Status"
+                [("1111", "Assigned", "Investigate", "Review note"),
+                 ("2222", "Dismissed", "No concerns", None)]
+                if self.description[0][0] == "ID"
                 else []
             )
 
@@ -203,8 +207,10 @@ def test_status_feedback_query_uses_datatext_database_and_parameterized_claim(mo
     sections = dashboard_service._fetch_datatext_sections("85-00370154")
 
     assert sections["status_feedback"] == [
-        {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "Review note"},
-        {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": None},
+        {"ID": "1111", "Status": "Assigned", "Feedback": "Investigate",
+         "Feedback Notes": "Review note"},
+        {"ID": "2222", "Status": "Dismissed", "Feedback": "No concerns",
+         "Feedback Notes": None},
     ]
     assert calls == [
         (dashboard_service.GAME_SUMMARY_QUERY, ["85-00370154"]),
