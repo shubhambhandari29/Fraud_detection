@@ -75,7 +75,7 @@ def test_dashboard_aggregates_sections_and_power_bi_indicators(monkeypatch):
         "_fetch_datatext_sections",
         lambda claim_number: {
             "game_summary": [{"clm_nbr": claim_number, "topic": "Summary"}],
-            "claim_review": [
+            "status_feedback": [
                 {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "First"},
                 {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": "Second"},
             ],
@@ -96,7 +96,7 @@ def test_dashboard_aggregates_sections_and_power_bi_indicators(monkeypatch):
         "iso_match": "Y",
     }
     assert result.edw[0]["FTR_CREAT_DT_U"] == "2026-10-07"
-    assert result.claim_review == [
+    assert result.status_feedback == [
         {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "First"},
         {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": "Second"},
     ]
@@ -128,13 +128,13 @@ def test_dashboard_returns_n_for_missing_related_sections(monkeypatch):
     monkeypatch.setattr(
         dashboard_service,
         "_fetch_datatext_sections",
-        lambda claim_number: {"game_summary": [], "claim_review": []},
+        lambda claim_number: {"game_summary": [], "status_feedback": []},
     )
 
     result = asyncio.run(dashboard_service.get_dashboard("85-00370154"))
 
     assert set(result.indicators.model_dump().values()) == {"N"}
-    assert result.claim_review == []
+    assert result.status_feedback == []
     assert result.edw[0]["Clm_Nbr"] == "85-00370154"
     assert result.edw[0]["_dummy"] is True
     assert result.watchlist[0]["_dummy"] is True
@@ -158,7 +158,7 @@ def test_dashboard_placeholder_switch_can_restore_empty_arrays(monkeypatch):
     monkeypatch.setattr(
         dashboard_service,
         "_fetch_datatext_sections",
-        lambda claim_number: {"game_summary": [], "claim_review": []},
+        lambda claim_number: {"game_summary": [], "status_feedback": []},
     )
 
     result = asyncio.run(dashboard_service.get_dashboard("85-00370154"))
@@ -166,10 +166,10 @@ def test_dashboard_placeholder_switch_can_restore_empty_arrays(monkeypatch):
     assert result.edw == []
     assert result.watchlist == []
     assert result.ies_bills == []
-    assert result.claim_review == []
+    assert result.status_feedback == []
 
 
-def test_claim_review_query_uses_datatext_database_and_parameterized_claim(monkeypatch):
+def test_status_feedback_query_uses_datatext_database_and_parameterized_claim(monkeypatch):
     calls = []
 
     class Cursor:
@@ -177,7 +177,7 @@ def test_claim_review_query_uses_datatext_database_and_parameterized_claim(monke
             calls.append((query, params))
             self.description = (
                 [("Status",), ("Feedback",), ("Feedback Notes",)]
-                if query == dashboard_service.CLAIM_REVIEW_QUERY
+                if query == dashboard_service.STATUS_FEEDBACK_QUERY
                 else [("clm_nbr",), ("topic",), ("value",), ("template",)]
             )
 
@@ -202,13 +202,13 @@ def test_claim_review_query_uses_datatext_database_and_parameterized_claim(monke
 
     sections = dashboard_service._fetch_datatext_sections("85-00370154")
 
-    assert sections["claim_review"] == [
+    assert sections["status_feedback"] == [
         {"Status": "Assigned", "Feedback": "Investigate", "Feedback Notes": "Review note"},
         {"Status": "Dismissed", "Feedback": "No concerns", "Feedback Notes": None},
     ]
     assert calls == [
         (dashboard_service.GAME_SUMMARY_QUERY, ["85-00370154"]),
-        (dashboard_service.CLAIM_REVIEW_QUERY, ["85-00370154"]),
+        (dashboard_service.STATUS_FEEDBACK_QUERY, ["85-00370154"]),
     ]
 
 

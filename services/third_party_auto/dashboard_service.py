@@ -163,7 +163,7 @@ FROM [dbo].[tblFraudThirdPartyAutoBI_GAME]
 WHERE [clm_nbr] = ?
 """
 
-CLAIM_REVIEW_QUERY = """
+STATUS_FEEDBACK_QUERY = """
 SELECT [Status], [Feedback], [Feedback Notes]
 FROM [dbo].[tblFraudThirdPartyAutoBIEDW_OpenClaims_Predictions_Selector]
 WHERE [CLM_NBR] = ?
@@ -207,7 +207,7 @@ def _fetch_datatext_sections(
         cursor = connection.cursor()
         return {
             "game_summary": _fetch_rows(cursor, GAME_SUMMARY_QUERY, claim_number),
-            "claim_review": _fetch_rows(cursor, CLAIM_REVIEW_QUERY, claim_number),
+            "status_feedback": _fetch_rows(cursor, STATUS_FEEDBACK_QUERY, claim_number),
         }
 
 
@@ -330,7 +330,7 @@ async def get_dashboard(claim_number: str) -> ThirdPartyAutoDashboard:
         flags = serialize_record_dates(fraud["ies_flags"])
         ies_bills = _attach_ies_flags(bills, flags)
         game_summary = serialize_record_dates(datatext["game_summary"])
-        claim_review = serialize_record_dates(datatext["claim_review"])
+        status_feedback = serialize_record_dates(datatext["status_feedback"])
 
         indicators = _build_indicators(
             edw=edw,
@@ -343,7 +343,7 @@ async def get_dashboard(claim_number: str) -> ThirdPartyAutoDashboard:
         return ThirdPartyAutoDashboard(
             claim_number=normalized_claim_number,
             indicators=indicators,
-            claim_review=claim_review,
+            status_feedback=status_feedback,
             edw=empty_section_or_placeholder(edw, "fraud.edw", normalized_claim_number),
             cts=cts,
             smart_features=smart_features,

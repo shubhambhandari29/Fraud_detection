@@ -23,7 +23,7 @@ class ThirdPartyAutoDashboard(BaseModel):
 
     claim_number: str
     indicators: DashboardIndicators
-    claim_review: list[dict[str, Any]] = Field(default_factory=list)
+    status_feedback: list[dict[str, Any]] = Field(default_factory=list)
     edw: list[dict[str, Any]] = Field(default_factory=list)
     cts: list[dict[str, Any]] = Field(default_factory=list)
     smart_features: list[dict[str, Any]] = Field(default_factory=list)
